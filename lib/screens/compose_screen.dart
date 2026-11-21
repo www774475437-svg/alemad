@@ -20,7 +20,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
   final _title = TextEditingController();
   final _text = TextEditingController();
   late String _chapter = Repository.instance.chapters.isEmpty ? 'mutafarriq' : Repository.instance.chapters.first.id;
-  bool _inApp = true, _inChannel = true, _withLink = true;
+  bool _inApp = true, _inChannel = true;
+  static const _withLink = false; // posts go to Telegram without a link
   DateTime? _at;
   Recorded? _voice;
   bool _busy = false;
@@ -127,13 +128,6 @@ class _ComposeScreenState extends State<ComposeScreen> {
             value: _inChannel,
             onChanged: (v) => setState(() => _inChannel = v ?? true),
           ),
-          if (_inApp && _inChannel)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('مع الرابط القصير إلى التطبيق'),
-              value: _withLink,
-              onChanged: (v) => setState(() => _withLink = v ?? true),
-            ),
         ],
         const SizedBox(height: 6),
         OutlinedButton.icon(

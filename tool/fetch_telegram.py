@@ -85,6 +85,16 @@ def main():
             break
         time.sleep(0.15)
     if not posts:
+        # The channel's web preview is closed: use what the bot collected.
+        try:
+            url = 'https://raw.githubusercontent.com/www774475437-svg/alemad/media/posts.json'
+            for p in json.loads(get(url)):
+                if p['id'] not in FROM_APP and len(p.get('text', '')) >= 20:
+                    posts[p['id']] = {'id': p['id'], 'text': p['text'], 'date': p.get('date', '')}
+            print('posts from the bot:', len(posts))
+        except Exception as e:
+            print('no bot posts yet:', e)
+    if not posts:
         print('no posts fetched; keeping the existing file')
         return
     items = sorted(posts.values(), key=lambda p: -p['id'])

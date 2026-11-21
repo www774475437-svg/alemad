@@ -34,10 +34,9 @@ class TelegramOut {
       }
       b.writeln(text.trim());
     }
-    if (link.isNotEmpty) {
-      b.writeln();
-      b.write('🔗 $link');
-    }
+    // No link: only the app's name at the end.
+    b.writeln();
+    b.write('📱 تطبيق «سلمان العماد»');
     final s = b.toString().trim();
     return s.length > 4000 ? '${s.substring(0, 3990)}…' : s;
   }

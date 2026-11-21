@@ -71,10 +71,6 @@ class LiveFeed {
   }
 
   // ------------------------------------------------------------ Telegram
-  static final _msg = RegExp(r'<div class="tgme_widget_message_wrap[\s\S]*?(?=<div class="tgme_widget_message_wrap|$)');
-  static final _post = RegExp('data-post="$_channel/(\\d+)"');
-  static final _text = RegExp(r'<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)</div>');
-  static final _time = RegExp(r'<time[^>]*datetime="([^"]+)"');
 
   static String clean(String fragment) {
     var t = fragment.replaceAll(RegExp(r'<br\s*/?>'), '\n').replaceAll(RegExp(r'<[^>]+>'), '');
@@ -136,44 +132,31 @@ class LiveFeed {
     final known = Repository.instance.lastChannelId;
     final f = <Map<String, dynamic>>[];
     final c = <Map<String, dynamic>>[];
-    String? before;
-    // Newest pages first, until a post we already have (at most 5 pages).
-    for (var page = 0; page < 5; page++) {
-      final res = await http
-          .get(Uri.parse('https://t.me/s/$_channel${before == null ? '' : '?before=$before'}'),
-              headers: {'User-Agent': 'Mozilla/5.0 (Android 13) alemad-app'})
-          .timeout(const Duration(seconds: 20));
-      if (res.statusCode != 200) return false;
-      final body = utf8.decode(res.bodyBytes);
-      var low = 1 << 30;
-      var any = false;
-      for (final b in _msg.allMatches(body)) {
-        final block = b.group(0)!;
-        final pm = _post.firstMatch(block);
-        if (pm == null) continue;
-        final id = int.parse(pm.group(1)!);
-        any = true;
-        if (id < low) low = id;
-        if (id <= known) continue;
-        if (_fromApp.contains(id)) continue; // posted from the app: already inside
-        final tm = _text.firstMatch(block);
-        var text = tm == null ? '' : clean(tm.group(1)!);
-        text = text.replaceAll(_hashtags, '').replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
-        if (text.length < 20 || _linkOnly.hasMatch(text)) continue;
-        final date = _time.firstMatch(block)?.group(1);
-        final d = date == null || date.length < 10 ? '' : date.substring(0, 10);
-        final base = {'id': 'tg-$id', 'tags': <String>[], 'date': d, 'source': 'https://t.me/$_channel/$id'};
-        final qa = _split(text);
-        if (qa != null) {
-          f.add({...base, 'chapter': 'mutafarriq', 'type': 'fatwa', 'title': titleOf(qa.$1), 'question': qa.$1, 'answer': qa.$2});
-        } else if (text.length >= 220) {
-          f.add({...base, 'chapter': 'mutafarriq', 'type': 'article', 'title': titleOf(text), 'question': '', 'answer': text});
-        } else {
-          c.add({'id': id, 'text': text, 'date': d});
-        }
+    // The channel's web preview is closed, so the bot collects its posts
+    // into one small file (refreshed every ~10 minutes).
+    final res = await http
+        .get(Uri.parse('https://raw.githubusercontent.com/www774475437-svg/alemad/media/posts.json'))
+        .timeout(const Duration(seconds: 20));
+    if (res.statusCode != 200) return false;
+    final list = jsonDecode(utf8.decode(res.bodyBytes)) as List;
+    for (final e in list) {
+      final m = e as Map;
+      final id = (m['id'] as num).toInt();
+      if (id <= known) continue;
+      if (_fromApp.contains(id)) continue; // posted from the app: already inside
+      var text = '${m['text'] ?? ''}';
+      text = text.replaceAll(_hashtags, '').replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
+      if (text.length < 20 || _linkOnly.hasMatch(text)) continue;
+      final d = '${m['date'] ?? ''}';
+      final base = {'id': 'tg-$id', 'tags': <String>[], 'date': d, 'source': 'https://t.me/$_channel/$id'};
+      final qa = _split(text);
+      if (qa != null) {
+        f.add({...base, 'chapter': 'mutafarriq', 'type': 'fatwa', 'title': titleOf(qa.$1), 'question': qa.$1, 'answer': qa.$2});
+      } else if (text.length >= 220) {
+        f.add({...base, 'chapter': 'mutafarriq', 'type': 'article', 'title': titleOf(text), 'question': '', 'answer': text});
+      } else {
+        c.add({'id': id, 'text': text, 'date': d});
       }
-      if (!any || low <= known + 1) break;
-      before = '$low';
     }
     if (f.isEmpty && c.isEmpty) return true;
     Repository.instance.addLive(

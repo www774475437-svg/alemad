@@ -11,6 +11,7 @@ TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 ROOT = Path(os.environ.get("MEDIA_ROOT", "."))
 LIST = ROOT / "audio.json"
 STATE = ROOT / "state.json"
+POSTS = ROOT / "posts.json"  # the channel's text posts (its web preview is closed)
 MAX = 20 * 1024 * 1024  # the Bot API gives files up to 20 MB
 
 
@@ -28,6 +29,8 @@ def main():
     items = json.loads(LIST.read_text("utf-8")) if LIST.exists() else []
     state = json.loads(STATE.read_text("utf-8")) if STATE.exists() else {"offset": 0}
     have = {i["key"] for i in items}
+    posts = json.loads(POSTS.read_text("utf-8")) if POSTS.exists() else []
+    pids = {p["id"] for p in posts}
     me = api("getMe").get("result", {})
     print("bot:", me.get("username"))
     res = api("getUpdates", offset=state["offset"], timeout=0, allowed_updates='["channel_post"]')
@@ -41,6 +44,11 @@ def main():
             doc if str(doc.get("mime_type", "")).startswith("audio/") else None)
         print("update:", u["update_id"], "chat:", (post.get("chat") or {}).get("title"),
               "kinds:", [k for k in post if k in ("audio", "voice", "document", "video", "text")])
+        words = (post.get("text") or post.get("caption") or "").strip()
+        if words and post.get("message_id") not in pids:
+            pids.add(post["message_id"])
+            posts.append({"id": post["message_id"], "text": words,
+                          "date": time.strftime("%Y-%m-%d", time.gmtime(post.get("date", 0)))})
         if not media:
             continue
         key = f'{post["chat"]["id"]}_{post["message_id"]}'
@@ -61,6 +69,8 @@ def main():
         have.add(key)
         added += 1
     LIST.write_text(json.dumps(items, ensure_ascii=False, indent=1), "utf-8")
+    posts.sort(key=lambda p: -p["id"])
+    POSTS.write_text(json.dumps(posts, ensure_ascii=False, indent=1), "utf-8")
     STATE.write_text(json.dumps(state), "utf-8")
     print("new recordings:", added, "total:", len(items))
 

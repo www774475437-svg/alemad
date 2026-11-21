@@ -549,7 +549,8 @@ class _ReplyScreenState extends State<ReplyScreen> {
   bool _publish = false;
   bool _busy = false;
   String _refId = '';
-  bool _channel = false, _withLink = true;
+  bool _channel = false;
+  static const _withLink = false; // posts go to Telegram without a link
   String _form = 'qa';
   Recorded? _voice;
 
@@ -696,12 +697,6 @@ class _ReplyScreenState extends State<ReplyScreen> {
                 ChoiceChip(label: const Text('سؤال وجواب'), selected: _form == 'qa', onSelected: (_) => setState(() => _form = 'qa')),
                 ChoiceChip(label: const Text('مقالة'), selected: _form == 'article', onSelected: (_) => setState(() => _form = 'article')),
               ]),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('مع الرابط القصير إلى التطبيق'),
-                value: _withLink,
-                onChanged: (v) => setState(() => _withLink = v ?? true),
-              ),
             ],
           ],
           const SizedBox(height: 16),
