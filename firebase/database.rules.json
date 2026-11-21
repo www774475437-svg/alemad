@@ -29,7 +29,7 @@
     "tour": {
       "$day": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.uid === '3oqvJwPEiXSohYH7GnqwCH1E7HY2'",
+        ".write": "auth != null && auth.uid === 'BOT-UID-NOT-SET-YET'",
         "p": {
           "$uid": {
             ".write": "auth != null && $uid === auth.uid",

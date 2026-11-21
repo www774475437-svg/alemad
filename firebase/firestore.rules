@@ -7,7 +7,7 @@ service cloud.firestore {
     function staffPath() { return /databases/$(database)/documents/admins/$(request.auth.token.email); }
     function isAdmin() { return isDev() || (verified() && exists(staffPath())); }
     // The «stats bot» account the server uses four times a day.
-    function isBot() { return signedIn() && request.auth.uid == '3oqvJwPEiXSohYH7GnqwCH1E7HY2'; }
+    function isBot() { return signedIn() && request.auth.uid == 'BOT-UID-NOT-SET-YET'; }
     function isFullAdmin() {
       return isDev() || (verified() && exists(staffPath()) && get(staffPath()).data.get('role', 'admin') == 'admin');
     }
