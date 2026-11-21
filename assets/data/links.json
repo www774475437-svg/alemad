@@ -1,0 +1,10 @@
+{
+  "sheikh": [
+    {"platform": "telegram", "name": "قناة الشيخ على تليجرام", "url": "https://t.me/salmansalehalemad"},
+    {"platform": "youtube",  "name": "قناة الشيخ على يوتيوب", "url": "https://youtube.com/@salmanalimad"}
+  ],
+  "developer": {
+    "name": "أبو عبد الرحمن أحمد الأثري",
+    "url": "https://t.me/alhsaar4/6"
+  }
+}

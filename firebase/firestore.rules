@@ -1,0 +1,158 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function isDev() { return verified() && request.auth.token.email == 'www774475437@gmail.com'; }
+    function staffPath() { return /databases/$(database)/documents/admins/$(request.auth.token.email); }
+    function isAdmin() { return isDev() || (verified() && exists(staffPath())); }
+    // The «stats bot» account the server uses four times a day.
+    function isBot() { return signedIn() && request.auth.uid == '3oqvJwPEiXSohYH7GnqwCH1E7HY2'; }
+    function isFullAdmin() {
+      return isDev() || (verified() && exists(staffPath()) && get(staffPath()).data.get('role', 'admin') == 'admin');
+    }
+    function isOwner() {
+      return isFullAdmin() && exists(staffPath()) && get(staffPath()).data.get('owner', false) == true;
+    }
+    function stepOk(field) {
+      return request.resource.data.get(field, 0) is int &&
+        request.resource.data.get(field, 0) - (resource == null ? 0 : resource.data.get(field, 0)) in [0, 1];
+    }
+    match /answers/{id}    { allow read: if true; allow write: if isAdmin(); }
+    match /titleEdits/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /series/{id}     { allow read: if true; allow write: if isAdmin(); }
+    match /scholars/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /drafts/{id}     { allow read, write: if isAdmin(); }
+    match /config/{id}     { allow read: if true; allow write: if isFullAdmin(); }
+    match /admins/{email}  {
+      allow read: if isAdmin() || (signedIn() && request.auth.token.email == email);
+      // Only the developer and the sheikh's own account manage the staff;
+      // only the developer decides who that account is.
+      allow create, update: if isDev() || (isOwner() && request.resource.data.get('owner', false) == false);
+      allow delete: if isDev() || (isOwner() && resource.data.get('owner', false) == false);
+    }
+    match /blocked/{uid}   { allow read, write: if isAdmin(); }
+    match /log/{id}        { allow create: if isAdmin(); allow read, delete: if isDev(); }
+    match /views/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['count', 'helpful', 'notHelpful'])
+        && stepOk('count') && stepOk('helpful') && stepOk('notHelpful');
+      allow delete: if isAdmin();
+    }
+    match /searchMisses/{id} {
+      allow create, update: if request.resource.data.keys().hasOnly(['count']) && stepOk('count');
+      allow read, delete: if isAdmin();
+    }
+    match /searches/{week} {
+      allow read: if true;
+      allow create, update: if request.resource.data.size() <= 5000;
+    }
+    match /reports/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['answerId', 'title', 'note', 'by', 'at'])
+        && request.resource.data.note is string && request.resource.data.note.size() < 2000;
+      allow read, delete: if isAdmin();
+    }
+    match /questions/{id} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && !exists(/databases/$(database)/documents/blocked/$(request.auth.uid))
+        && request.resource.data.keys().hasOnly(['uid', 'text', 'chapter', 'name', 'at', 'status', 'reply', 'published'])
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() < 60
+        && request.resource.data.text is string && request.resource.data.text.size() < 3000
+        && request.resource.data.status == 'new' && request.resource.data.reply == ''
+        && request.resource.data.published == false;
+      // The sheikh writes first to a reader («راسله»).
+      allow create: if isAdmin() && request.resource.data.fromSheikh == true;
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+    }
+    // «الأسئلة»
+    match /quizCats/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /quizQs/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /quizStats/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['n', 'ok', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'])
+        && stepOk('n') && stepOk('ok') && stepOk('c0') && stepOk('c1') && stepOk('c2') && stepOk('c3')
+        && stepOk('c4') && stepOk('c5') && stepOk('c6') && stepOk('c7');
+      allow delete: if isAdmin();
+    }
+    match /quizUsers/{uid} {
+      allow read: if true;
+      allow write: if signedIn() && (request.auth.uid == uid || isAdmin());
+      // Each answer is written once and never changed.
+      match /a/{qid} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == uid;
+      }
+    }
+    match /quizSuggest/{id} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.text is string && request.resource.data.text.size() < 2000;
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+    // Who answered which question: staff see names only.
+    match /quizAns/{id} {
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, delete: if isAdmin();
+    }
+    // Challenges: names and scores only, no messages.
+    match /challenges/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.host == request.auth.uid;
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players', 'status', 'startAt', 'rematch', 'rematchBy']);
+      allow delete: if isAdmin();
+    }
+    // «بطولة الجمعة»: the questions stay locked until the room opens (ten
+    // minutes before 9 pm Mecca time); a player who found the live room full
+    // keeps his result here; the server reads them for the record.
+    match /tours/{day} {
+      allow read: if isAdmin() || isBot() || (signedIn() && request.time >= resource.data.openAt);
+      allow write: if isAdmin();
+      match /p/{uid} {
+        allow create, update: if signedIn() && request.auth.uid == uid;
+        allow read: if isAdmin() || isBot();
+      }
+    }
+    match /creditRequests/{id} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if isAdmin();
+    }
+    // «مجلس العلم»: comments under the sheikh's live lesson.
+    match /liveComments/{id} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.text is string && request.resource.data.text.size() <= 400
+        && id.matches('[0-9]{14}_' + request.auth.uid);
+      allow delete: if isAdmin();
+    }
+    // Posts waiting for the server to publish them in Telegram (staff only;
+    // the server reads them, then they are public in the channel anyway).
+    match /tgQueue/{id} {
+      allow read: if true;
+      allow create, update: if isFullAdmin();
+      allow delete: if isFullAdmin();
+    }
+    match /tgVoice/{id} {
+      allow read: if true;
+      allow create, delete: if isFullAdmin();
+    }
+    match /benefits/{id} { allow read: if true; allow write: if isAdmin(); }
+    // «كتب ينصح بها الشيخ»: the staff write; readers get them from the server file.
+    match /recBooks/{id} {
+      allow read: if isAdmin() || isBot();
+      allow write: if isAdmin();
+    }
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+      // The staff and the server read the members' summaries («المسجّلون»).
+      allow read: if isAdmin() || isBot();
+    }
+    // The members list the server makes for the staff (one or two reads).
+    match /adminData/{id} {
+      allow read: if isAdmin() || isBot();
+      allow write: if isBot();
+    }
+  }
+}

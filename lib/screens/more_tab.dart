@@ -1,0 +1,1024 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
+
+import '../config.dart';
+import '../services/notifications.dart';
+
+import '../data/repository.dart';
+import '../services/books_store.dart';
+import '../data/models.dart';
+import '../theme.dart';
+import '../widgets/common.dart';
+import 'ask_screen.dart';
+import 'audio_library.dart';
+import 'my_benefits.dart' show MyBenefitsScreen;
+import 'recommended_books.dart';
+import 'channel_screen.dart';
+import 'account_screens.dart';
+import 'accounts_screen.dart';
+import 'adhkar_screen.dart';
+import 'quran_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import 'content_screens.dart';
+import 'extra_screens.dart';
+import 'review_screen.dart';
+import 'quiz_screens.dart';
+import 'prayer_screen.dart';
+import 'tools_screens.dart';
+import 'profile_screen.dart';
+import 'widgets_screen.dart';
+import 'hijri_screen.dart';
+import '../widgets/sky_card.dart';
+import '../services/cloud.dart';
+
+class MoreTab extends StatelessWidget {
+  const MoreTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = Repository.instance;
+    return Scaffold(
+      appBar: AppBar(title: const Text('المزيد')),
+      body: ListenableBuilder(
+        listenable: Listenable.merge([repo, Cloud.instance]),
+        builder: (context, _) => ListView(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          children: [
+            _ReaderStats(count: repo.readThisMonth),
+            _BigCard(
+              icon: Icons.auto_stories_outlined,
+              title: 'المصحف',
+              subtitle: 'مصحف المدينة برواية حفص، بلا إنترنت',
+              color: kGold,
+              fg: const Color(0xFF1B1B1B),
+              iconColor: const Color(0xFF1B1B1B),
+              onTap: () =>
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const QuranScreen())),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: PrayerSkyCard(onTap: () => openPrayer(context)),
+            ),
+            _BigCard(
+              icon: Icons.spa_outlined,
+              title: 'الأذكار',
+              subtitle: 'حصن المسلم كاملاً، وعدّاد التسبيح',
+              color: const Color(0xFF2E7D32),
+              onTap: () =>
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdhkarScreen())),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+              child: Row(children: [
+                Expanded(
+                  child: _MiniCard(
+                    icon: Icons.calendar_month_outlined,
+                    title: 'التقويم الهجري',
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HijriScreen())),
+                  ),
+                ),
+                if (Cloud.instance.zakatOn || Cloud.instance.isAdmin) const SizedBox(width: 8),
+                if (Cloud.instance.zakatOn || Cloud.instance.isAdmin)
+                Expanded(
+                  child: _MiniCard(
+                    icon: Icons.calculate_outlined,
+                    title: 'حاسبة الزكاة',
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ZakatScreen())),
+                  ),
+                ),
+                if (lessonsVisible() || Cloud.instance.isAdmin) const SizedBox(width: 8),
+                if (lessonsVisible() || Cloud.instance.isAdmin)
+                Expanded(
+                  child: _MiniCard(
+                    icon: Icons.event_note_outlined,
+                    title: 'جدول الدروس',
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LessonsScreen())),
+                  ),
+                ),
+              ]),
+            ),
+            _BigCard(
+              icon: Icons.quiz_outlined,
+              title: 'الأسئلة والأجوبة',
+              subtitle: 'اختبر علمك بأسئلة الشيخ، والمتصدرون',
+              color: const Color(0xFF3B4A8C),
+              onTap: () => openQuiz(context),
+            ),
+            // A small gold strip: channels and accounts of the sheikh and of those the staff add.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Material(
+                color: kGold.withValues(alpha: 0.16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: const BorderSide(color: kGold),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => const AccountsScreen())),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    child: Row(
+                      children: [
+                        Icon(Icons.campaign_outlined, color: kGoldChip, size: 22),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text('قنوات وحسابات أنصح بها',
+                              style: TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 15)),
+                        ),
+                        Icon(Icons.chevron_left, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.send_outlined, size: 18),
+                label: const Text('أرسل التطبيق لصديق'),
+                onPressed: () {
+                  Cloud.instance.countAppShare();
+                  Share.share(shareAppText());
+                },
+              ),
+            ),
+            const _Group('الحساب'),
+            _Section(children: [
+              ListTile(
+                leading: const _IconBox(Icons.insights_outlined),
+                title: const Text('قراءتي'),
+                subtitle: const Text('كم قرأت، وكم بقي في كل باب'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const MyReadingScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.auto_awesome_outlined),
+                title: const Text('فوائدي المحفوظة'),
+                subtitle: const Text('الجمل التي حفظتها من الكتب والأجوبة'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const MyBenefitsScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.bookmarks_outlined),
+                title: const Text('علاماتي الصوتية'),
+                subtitle: const Text('دقائق حفظتها من الدروس، ترجع إليها بضغطة'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const AudioMarksScreen())),
+              ),
+              ListenableBuilder(
+                listenable: Cloud.instance,
+                builder: (context, _) {
+                  final u = Cloud.instance.user;
+                  return ListTile(
+                    leading: Badge(
+                      isLabelVisible: Cloud.instance.newQuestions > 0,
+                      label: Text('${Cloud.instance.newQuestions}'),
+                      child: const _IconBox(Icons.account_circle_outlined),
+                    ),
+                    title: Text(u == null ? 'تسجيل الدخول أو إنشاء حساب' : (u.displayName ?? 'حسابي')),
+                    subtitle: u == null ? null : Text(Cloud.instance.isAdmin ? (Cloud.instance.isFullAdmin ? 'مشرف · لوحة الإدارة' : 'محرّر · لوحة المحرّر') : (u.email ?? '')),
+                    trailing: const Icon(Icons.chevron_left),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const AccountScreen())),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.trending_up),
+                title: const Text('الأكثر قراءة'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const MostReadScreen())),
+              ),
+            ]),
+            if (Cloud.instance.ready && Cloud.instance.isAdmin) ...[
+              const _Group('أدوات المشرفين'),
+              _Section(children: [
+                if (Cloud.instance.isFullAdmin) ...[
+                  SwitchListTile(
+                    secondary: const _IconBox(Icons.auto_awesome_outlined),
+                    title: const Text('الذكاء الاصطناعي في بحث كتب الثقات'),
+                    subtitle: const Text('يقسّم السؤال إلى مسائله'),
+                    value: Cloud.instance.aiEnabled,
+                    onChanged: (v) => Cloud.instance.setConfig(
+                        'ai', {'enabled': v, 'summary': Cloud.instance.aiSummary}, 'تشغيل/إيقاف الذكاء'),
+                  ),
+                  SwitchListTile(
+                    secondary: const _IconBox(Icons.short_text),
+                    title: const Text('الحكم المختصر الآلي'),
+                    subtitle: const Text('تلخيص من نصوص الشيخ؛ أطفئه لتُعرض النصوص وحدها'),
+                    value: Cloud.instance.aiSummary,
+                    onChanged: Cloud.instance.aiEnabled
+                        ? (v) => Cloud.instance
+                            .setConfig('ai', {'enabled': true, 'summary': v}, 'تشغيل/إيقاف الحكم المختصر')
+                        : null,
+                  ),
+                ],
+                ListTile(
+                  leading: const _IconBox(Icons.rule_folder_outlined),
+                  title: const Text('المتحقق منه وغير المتحقق منه'),
+                  subtitle: const Text('غير المتحقق منه: صحّح وانقل ثم تحقّق — والمتحقق منه في تبويب مستقل'),
+                  trailing: const Icon(Icons.chevron_left),
+                  onTap: () => Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => const ReviewScreen())),
+                ),
+                ListTile(
+                  leading: const _IconBox(Icons.visibility_off_outlined),
+                  title: const Text('المنشورات المخفية'),
+                  trailing: const Icon(Icons.chevron_left),
+                  onTap: () => Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => const HiddenScreen())),
+                ),
+              ]),
+            ],
+            const _Group('التعريف بالشيخ وحساباته'),
+            _Section(children: [
+              ListTile(
+                leading: const _IconBox(Icons.person_outline),
+                title: const Text('عن الشيخ'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const AboutSheikhScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.campaign_outlined),
+                title: const Text('من قناة الشيخ'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const ChannelScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.headphones),
+                title: const Text('الدروس والتسجيلات الصوتية'),
+                subtitle: const Text('سلاسل الدروس وتسجيلات الشيخ'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const AudioLibraryScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.local_library_outlined),
+                title: const Text('كتب ينصح بها الشيخ'),
+                subtitle: const Text('كتب مختارة لطلبة العلم'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const RecommendedBooksScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.play_circle_outline),
+                title: const Text('المرئيات'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const VideosScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.groups_outlined),
+                title: const Text('المشايخ الثقات المعتمدون'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const ScholarsScreen())),
+              ),
+              if (Cloud.instance.schedule.trim().isNotEmpty)
+                ListTile(
+                  leading: const _IconBox(Icons.event_available_outlined),
+                  title: const Text('جدول دروس الشيخ'),
+                  trailing: const Icon(Icons.chevron_left),
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('جدول دروس الشيخ'),
+                      content: SingleChildScrollView(
+                        child: SelectableText(Cloud.instance.schedule, style: const TextStyle(height: 1.9)),
+                      ),
+                      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق'))],
+                    ),
+                  ),
+                ),
+              ExpansionTile(
+                leading: const _IconBox(Icons.link),
+                title: const Text('حسابات الشيخ الرسمية'),
+                shape: const Border(),
+                children: [
+                  for (final l in repo.sheikhLinks)
+                    ListTile(
+                      leading: _IconBox(platformIcon(l.platform)),
+                      title: Text(l.name),
+                      subtitle: l.url.isEmpty ? const Text('يُضاف قريباً') : null,
+                      trailing: const Icon(Icons.chevron_left),
+                      enabled: l.url.isNotEmpty,
+                      onTap: () => openUrl(context, l.url),
+                    ),
+                ],
+              ),
+            ]),
+            const _Group('التواصل'),
+            _Section(children: [
+              ListTile(
+                leading: const _IconBox(Icons.forum_outlined),
+                title: const Text('اسأل الشيخ'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const AskScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.code),
+                title: const Text('تواصل مع المطوّر'),
+                subtitle: Text(repo.developerName),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => openUrl(context, repo.developerUrl),
+              ),
+            ]),
+            const _Group('الإعدادات'),
+            _Section(children: [
+              if (!kIsWeb && (Cloud.instance.sunanOn || Cloud.instance.isAdmin))
+                ListTile(
+                  leading: const _IconBox(Icons.notifications_active_outlined),
+                  title: const Text('تذكيرات السنن'),
+                  subtitle: const Text('الكهف يوم الجمعة، وصيام الاثنين والخميس والأيام البيض'),
+                  trailing: const Icon(Icons.chevron_left),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SunanScreen())),
+                ),
+              ListTile(
+                leading: const _IconBox(Icons.mosque_outlined),
+                title: const Text('مواقيت الصلاة والقبلة'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => openPrayer(context),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.palette_outlined),
+                title: const Text('شعار التطبيق'),
+                subtitle: const Text('اختر الشعار الذي يظهر في التطبيق وعلى شاشة الجوال'),
+                trailing: ClipRRect(borderRadius: BorderRadius.circular(8), child: const AppLogo(size: 36)),
+                onTap: () => showModalBottomSheet(context: context, showDragHandle: true, builder: (_) => const _LogoPicker()),
+              ),
+              if (!kIsWeb) ...[
+                SwitchListTile(
+                  secondary: const _IconBox(Icons.notifications_active_outlined),
+                  title: const Text('تنبيه «جواب اليوم»'),
+                  value: repo.dailyNotification,
+                  onChanged: (v) {
+                    repo.setDailyNotification(v);
+                    DailyNotifications.setEnabled(v,
+                        hour: repo.notifyHour, minute: repo.notifyMinute);
+                  },
+                ),
+                ListTile(
+                  leading: const _IconBox(Icons.schedule),
+                  title: const Text('وقت التنبيه'),
+                  enabled: repo.dailyNotification,
+                  trailing: Text(
+                    TimeOfDay(hour: repo.notifyHour, minute: repo.notifyMinute).format(context),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onTap: () async {
+                    final t = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay(hour: repo.notifyHour, minute: repo.notifyMinute),
+                    );
+                    if (t == null) return;
+                    repo.setNotifyTime(t.hour, t.minute);
+                    DailyNotifications.setEnabled(true, hour: t.hour, minute: t.minute);
+                  },
+                ),
+              ],
+              ListTile(
+                leading: const _IconBox(Icons.palette_outlined),
+                title: const Text('ألوان التطبيق'),
+                trailing: DropdownButton<String>(
+                  value: repo.palette,
+                  underline: const SizedBox(),
+                  onChanged: (p) => repo.setPalette(p ?? 'teal'),
+                  items: const [
+                    DropdownMenuItem(value: 'teal', child: Text('عنّابي وذهبي')),
+                    DropdownMenuItem(value: 'green', child: Text('كحلي وذهبي')),
+                    DropdownMenuItem(value: 'black', child: Text('أسود وذهبي')),
+                    DropdownMenuItem(value: 'paper', child: Text('ورقي هادئ')),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.font_download_outlined),
+                title: const Text('نوع الخط'),
+                trailing: DropdownButton<String>(
+                  value: repo.fontFamily,
+                  underline: const SizedBox(),
+                  onChanged: (f) => repo.setFontFamily(f ?? ''),
+                  items: const [
+                    DropdownMenuItem(value: 'Amiri', child: Text('أميري', style: TextStyle(fontFamily: 'Amiri'))),
+                    DropdownMenuItem(value: 'Tajawal', child: Text('تجوّل (واضح)', style: TextStyle(fontFamily: 'Tajawal'))),
+                    DropdownMenuItem(value: 'ReemKufi', child: Text('ريم كوفي', style: TextStyle(fontFamily: 'ReemKufi'))),
+                    DropdownMenuItem(value: '', child: Text('خط الجهاز')),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.dark_mode_outlined),
+                title: const Text('المظهر'),
+                // One menu: 3 = dark after sunset, light by day.
+                trailing: DropdownButton<int>(
+                  value: repo.autoNight ? 3 : repo.themeMode.index,
+                  underline: const SizedBox(),
+                  onChanged: (v) {
+                    if (v == 3) {
+                      repo.setAutoNight(true);
+                    } else {
+                      repo.setAutoNight(false);
+                      repo.setThemeMode(ThemeMode.values[v ?? 0]);
+                    }
+                  },
+                  items: [
+                    DropdownMenuItem(value: ThemeMode.system.index, child: const Text('حسب الجهاز')),
+                    DropdownMenuItem(value: ThemeMode.light.index, child: const Text('فاتح')),
+                    DropdownMenuItem(value: ThemeMode.dark.index, child: const Text('داكن')),
+                    const DropdownMenuItem(value: 3, child: Text('داكن بعد المغرب')),
+                  ],
+                ),
+              ),
+              SwitchListTile(
+                secondary: const _IconBox(Icons.elderly_outlined),
+                title: const Text('الوضع السهل'),
+                subtitle: const Text('خط أكبر وأزرار أوسع، أريح لكبار السن'),
+                value: repo.easyMode,
+                onChanged: repo.setEasyMode,
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.widgets_outlined),
+                title: const Text('ويدجت الشاشة الرئيسية'),
+                subtitle: const Text('جواب اليوم، ذِكر، قراءتي، سؤال اليوم، بطولة الجمعة، المواقيت'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WidgetsScreen())),
+              ),
+              SwitchListTile(
+                secondary: const _IconBox(Icons.text_increase),
+                title: const Text('الخط الكبير'),
+                subtitle: const Text('لمن يحتاج خطاً أوضح'),
+                value: repo.fontScale >= 1.3,
+                onChanged: (v) {
+                  repo.setFontScale(v ? 1.35 : 1.0);
+                  repo.saveReadingScale(v ? 1.3 : 1.0);
+                },
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.local_fire_department_outlined),
+                title: const Text('الوِرد اليومي من الأجوبة'),
+                trailing: DropdownButton<int>(
+                  value: const [0, 1, 3, 5, 10].contains(repo.wirdTarget) ? repo.wirdTarget : 0,
+                  underline: const SizedBox(),
+                  onChanged: (n) => repo.setWirdTarget(n ?? 0),
+                  items: const [
+                    DropdownMenuItem(value: 0, child: Text('بدون')),
+                    DropdownMenuItem(value: 1, child: Text('جواب')),
+                    DropdownMenuItem(value: 3, child: Text('3 أجوبة')),
+                    DropdownMenuItem(value: 5, child: Text('5 أجوبة')),
+                    DropdownMenuItem(value: 10, child: Text('10 أجوبة')),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.format_size),
+                title: const Text('حجم الخط'),
+                subtitle: Slider(
+                  value: repo.fontScale,
+                  min: 0.85,
+                  max: 1.5,
+                  divisions: 13,
+                  onChanged: repo.setFontScale,
+                ),
+              ),
+            ]),
+            const _Group('التطبيق والموقع'),
+            _Section(children: [
+              if (!kIsWeb)
+                ListTile(
+                  leading: const _IconBox(Icons.download_for_offline_outlined),
+                  title: const Text('حمّل كل الكتب للقراءة بلا إنترنت'),
+                  subtitle: const Text('الأجوبة محفوظة في التطبيق أصلاً'),
+                  trailing: const Icon(Icons.chevron_left),
+                  onTap: () => showDialog(context: context, barrierDismissible: false, builder: (_) => const _DownloadAll()),
+                ),
+              ListTile(
+                leading: const _IconBox(Icons.qr_code_2),
+                title: const Text('رمز الموقع (QR) ونشر التطبيق'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const QrScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.backup_outlined),
+                title: const Text('النسخة الاحتياطية'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const BackupScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.android),
+                title: const Text('تحميل التطبيق لأندرويد'),
+                trailing: const Icon(Icons.download),
+                onTap: () => openUrl(context, AppConfig.apkUrl),
+              ),
+              if (AppConfig.playStoreUrl.isNotEmpty)
+                ListTile(
+                  leading: const _IconBox(Icons.shop),
+                  title: const Text('جوجل بلاي'),
+                  onTap: () => openUrl(context, AppConfig.playStoreUrl),
+                ),
+              if (AppConfig.appStoreUrl.isNotEmpty)
+                ListTile(
+                  leading: const _IconBox(Icons.apple),
+                  title: const Text('آبل ستور'),
+                  onTap: () => openUrl(context, AppConfig.appStoreUrl),
+                ),
+              ListTile(
+                leading: const _IconBox(Icons.language),
+                title: const Text('موقع التطبيق'),
+                subtitle: const Text(AppConfig.siteUrl, textDirection: TextDirection.ltr),
+                onTap: () => openUrl(context, AppConfig.siteUrl),
+              ),
+            ]),
+            const _Group('عن التطبيق'),
+            _Section(children: [
+              ListTile(
+                leading: const _IconBox(Icons.lightbulb_outline),
+                title: const Text('اقتراح للمطوّر'),
+                subtitle: const Text('فكرة أو ملاحظة تحسّن التطبيق'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () async {
+                  final c = TextEditingController();
+                  final text = await showDialog<String>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('اقتراح للمطوّر'),
+                      content: TextField(
+                        controller: c,
+                        autofocus: true,
+                        maxLines: 5,
+                        maxLength: 1500,
+                        decoration: const InputDecoration(
+                            hintText: 'اكتب اقتراحك أو ملاحظتك', border: OutlineInputBorder()),
+                      ),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+                        FilledButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('إرسال')),
+                      ],
+                    ),
+                  );
+                  if (text == null || text.trim().length < 3) return;
+                  final err = await Cloud.instance.suggest(text);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(err ?? 'وصل اقتراحك، جزاك الله خيراً')));
+                },
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.new_releases_outlined),
+                title: const Text('ما الجديد'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const WhatsNewScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.privacy_tip_outlined),
+                title: const Text('سياسة الخصوصية'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const PrivacyScreen())),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            const _Section(children: [
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'تطبيق «سلمان العماد» يجمع أجوبة ومقالات وكتب ورسائل الشيخ '
+                  'سلمان بن صالح العماد حفظه الله، '
+                  'مرتّبة على الأبواب مع البحث بالموضوع.\n\n'
+                  'الإصدار ${AppConfig.version} (${AppConfig.buildNumber})',
+                  style: TextStyle(height: 1.8),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _soon(BuildContext context, IconData icon, String title, String text) => ListTile(
+      leading: _IconBox(icon),
+      title: Text(title),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: kGold.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Text('قريباً', style: TextStyle(fontSize: 12, color: kGoldChip)),
+      ),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ComingSoonScreen(title: title, icon: icon, text: text))),
+    );
+
+/// A wide coloured card: the mushaf and the adhkar look alike.
+class _BigCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Color fg;
+  final Color iconColor;
+  final VoidCallback onTap;
+  const _BigCard(
+      {required this.icon,
+      required this.title,
+      required this.subtitle,
+      required this.color,
+      required this.onTap,
+      this.fg = Colors.white,
+      this.iconColor = kGold});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        child: Material(
+          color: color,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              child: Row(
+                children: [
+                  Icon(icon, color: iconColor, size: 30),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: TextStyle(
+                                fontFamily: 'Tajawal',
+                                color: fg,
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text(subtitle, style: TextStyle(color: fg, fontSize: 13.5)),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_left, color: fg),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+/// What the reader read this month, with his monthly goal, and the way to «لوحتي».
+class _ReaderStats extends StatefulWidget {
+  final int count;
+  const _ReaderStats({required this.count});
+
+  @override
+  State<_ReaderStats> createState() => _ReaderStatsState();
+}
+
+class _ReaderStatsState extends State<_ReaderStats> {
+  int _goal = 30;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((p) {
+      if (mounted) setState(() => _goal = p.getInt('monthGoal') ?? 30);
+    });
+  }
+
+  Future<void> _setGoal() async {
+    final v = await showModalBottomSheet<int>(
+      context: context,
+      builder: (c) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Padding(
+            padding: EdgeInsets.all(14),
+            child: Text('هدفك في الشهر', style: TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 18)),
+          ),
+          Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: [
+            for (final n in const [10, 20, 30, 50, 100, 200])
+              ChoiceChip(label: Text('$n جواباً'), selected: n == _goal, onSelected: (_) => Navigator.pop(c, n)),
+          ]),
+          const SizedBox(height: 18),
+        ]),
+      ),
+    );
+    if (v == null) return;
+    (await SharedPreferences.getInstance()).setInt('monthGoal', v);
+    if (mounted) setState(() => _goal = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final count = widget.count;
+    final done = count >= _goal;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Material(
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
+        elevation: 3,
+        child: Ink(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [Color(0xFF7A5A12), Color(0xFFB8913A), Color(0xFF1F5E3B)],
+              stops: [0, .45, 1],
+            ),
+          ),
+          child: Column(children: [
+            InkWell(
+              onTap: _setGoal,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Row(children: [
+                  SizedBox(
+                    width: 74,
+                    height: 74,
+                    child: Stack(fit: StackFit.expand, children: [
+                      CircularProgressIndicator(
+                        value: (count / _goal).clamp(0.0, 1.0),
+                        strokeWidth: 7,
+                        strokeCap: StrokeCap.round,
+                        backgroundColor: Colors.white24,
+                        color: Colors.white,
+                      ),
+                      Center(
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          Text('$count',
+                              style: const TextStyle(
+                                  fontFamily: 'Tajawal', color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, height: 1)),
+                          Text('من $_goal', style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
+                        ]),
+                      ),
+                    ]),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('قراءتي هذا الشهر',
+                          style: TextStyle(fontFamily: 'Tajawal', color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(
+                        count == 0
+                            ? 'لم تقرأ جواباً بعد، ابدأ اليوم'
+                            : done
+                                ? 'أتممت هدفك، بارك الله فيك 🌿'
+                                : 'بقي ${_goal - count} لتتم هدفك، بارك الله فيك',
+                        style: const TextStyle(color: Colors.white, height: 1.5),
+                      ),
+                      const Text('اضغط لتغيير الهدف', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
+            InkWell(
+              onTap: () => openDashboard(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                color: Colors.black.withValues(alpha: .18),
+                child: const Row(children: [
+                  Icon(Icons.dashboard_outlined, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text('لوحتي: نقاطي وأوسمتي وملفي',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                  Icon(Icons.chevron_left, color: Colors.white),
+                ]),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _Group extends StatelessWidget {
+  final String text;
+  const _Group(this.text);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 18, 24, 6),
+        child: Text(text, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+      );
+}
+
+class _Section extends StatelessWidget {
+  final List<Widget> children;
+  const _Section({required this.children});
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        clipBehavior: Clip.antiAlias,
+        child: Column(children: children),
+      );
+}
+
+class _IconBox extends StatelessWidget {
+  final IconData icon;
+  const _IconBox(this.icon);
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: brandColor(context),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: kGold, size: 20),
+      );
+}
+
+
+/// Downloads every book the reader does not have yet, one after another.
+class _DownloadAll extends StatefulWidget {
+  const _DownloadAll();
+
+  @override
+  State<_DownloadAll> createState() => _DownloadAllState();
+}
+
+class _DownloadAllState extends State<_DownloadAll> {
+  int _done = 0;
+  int _total = 0;
+  int _failed = 0;
+  double _part = 0;
+  bool _stop = false;
+  bool _finished = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _run();
+  }
+
+  Future<void> _run() async {
+    final books = Repository.instance.books;
+    final todo = <Book>[];
+    for (final b in books) {
+      if (await BooksStore.cachedFile(b) == null) todo.add(b);
+    }
+    if (!mounted) return;
+    setState(() => _total = todo.length);
+    for (final b in todo) {
+      if (_stop || !mounted) break;
+      try {
+        await BooksStore.download(b, (p) {
+          if (mounted) setState(() => _part = p < 0 ? 0 : p);
+        });
+      } catch (_) {
+        _failed++;
+      }
+      if (mounted) setState(() => _done++);
+    }
+    if (mounted) setState(() => _finished = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('تحميل الكتب'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_total == 0 && !_finished)
+            const Text('جارٍ التحقق…')
+          else if (_finished)
+            Text(_total == 0
+                ? 'كل الكتب محمّلة على جهازك ✅'
+                : 'انتهى التحميل: ${_done - _failed} من $_total${_failed > 0 ? '، وتعذّر $_failed' : ''}')
+          else ...[
+            Text('الكتاب ${_done + 1} من $_total'),
+            const SizedBox(height: 10),
+            LinearProgressIndicator(value: (_done + _part) / _total),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            _stop = true;
+            Navigator.pop(context);
+          },
+          child: Text(_finished ? 'تم' : 'إيقاف'),
+        ),
+      ],
+    );
+  }
+}
+
+
+/// «شعار التطبيق»: the reader picks one of the logos.
+class _LogoPicker extends StatelessWidget {
+  const _LogoPicker();
+
+  static const _channel = MethodChannel('alemad/icon');
+
+  Future<void> _pick(BuildContext context, int i) async {
+    appLogo.value = i;
+    final p = await SharedPreferences.getInstance();
+    await p.setInt('appLogoV2', i);
+    if (!kIsWeb) {
+      try {
+        await _channel.invokeMethod('set', i);
+      } catch (_) {}
+    }
+    if (context.mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(kIsWeb ? 'تم تغيير الشعار ✅' : 'تم تغيير الشعار ✅ قد يتأخر تغيّر أيقونة الجوال قليلاً')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('شعار التطبيق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            const SizedBox(height: 14),
+            ValueListenableBuilder<int>(
+              valueListenable: appLogo,
+              builder: (context, cur, _) => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  for (var i = 0; i < logoAssets.length; i++)
+                    GestureDetector(
+                      onTap: () => _pick(context, i),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(color: i == cur ? kGold : Colors.transparent, width: 3),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Image.asset(logoAssets[i], width: 88, height: 88, fit: BoxFit.cover, cacheWidth: 264),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// A small tidy card for a tool, two in a row.
+class _MiniCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  const _MiniCard({required this.icon, required this.title, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: kGold.withValues(alpha: .14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: kGold)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(children: [
+              Icon(icon, color: kGoldChip),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(title, style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 15)),
+              ),
+            ]),
+          ),
+        ),
+      );
+}
