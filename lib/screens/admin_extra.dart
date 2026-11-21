@@ -786,7 +786,7 @@ class _AnnouncementTabState extends State<AnnouncementTab> {
         const SizedBox(height: 8),
         const Text('زر تحت الإعلان (اختياري):', style: TextStyle(fontWeight: FontWeight.bold)),
         Wrap(spacing: 6, children: [
-          for (final a in const [('', 'بلا زر'), ('challenges', 'يفتح التحدّيات'), ('quiz', 'يفتح الأسئلة')])
+          for (final a in const [('', 'بلا زر'), ('quiz', 'يفتح الأسئلة')])
             ChoiceChip(label: Text(a.$2), selected: _action == a.$1, onSelected: (_) => setState(() => _action = a.$1)),
         ]),
         if (_action.isNotEmpty) ...[

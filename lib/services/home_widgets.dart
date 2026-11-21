@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/repository.dart';
 import 'quiz.dart';
-import 'tour.dart';
 
 /// The home-screen widgets (Android): «جواب اليوم», «ذِكر», «قراءتي»,
 /// «سؤال اليوم», «بطولة الجمعة» (and the prayer-times one, in prayer.dart).
@@ -21,7 +20,6 @@ class HomeWidgets {
     ('dhikr', 'ذِكر', 'ذِكر قصير يتجدّد كل يوم، ويفتح الأذكار'),
     ('read', 'قراءتي هذا الشهر', 'كم قرأت من هدفك هذا الشهر'),
     ('quiz', 'سؤال اليوم', 'سؤال من أسئلة كتب الشيخ كل يوم'),
-    ('tour', 'بطولة الجمعة', 'موعد البطولة القادمة مع عدّاد تنازلي'),
   ];
 
   static const _adhkar = [
@@ -84,18 +82,6 @@ class HomeWidgets {
         data['quiz_title'] = _short(q.text, 110);
         data['quiz_body'] = q.choices.map((c) => '• ${_short(c, 40)}').join('\n');
         data['quiz_foot'] = 'اضغط لتجيب';
-      }
-      // بطولة الجمعة
-      final t = Tour.instance;
-      final start = Tour.nextStart();
-      if (t.showCard) {
-        data['tour_title'] = Tour.arabicDate(Tour.keyOf(start));
-        data['tour_body'] = 'الساعة 9 مساءً بتوقيت مكة · تبدأ بعد';
-        data['tour_at'] = start.millisecondsSinceEpoch;
-      } else {
-        data['tour_title'] = 'لا بطولة معلنة الآن';
-        data['tour_body'] = 'تظهر هنا البطولة القادمة حين تُعلن';
-        data['tour_at'] = 0;
       }
       await _ch.invokeMethod('widgets', data);
     } catch (_) {}

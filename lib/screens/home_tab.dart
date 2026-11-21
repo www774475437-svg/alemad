@@ -1,6 +1,7 @@
 import 'benefit_card.dart';
+import 'sections.dart';
+import 'ask_screen.dart';
 import 'quiz_screens.dart';
-import 'tour_screens.dart';
 import '../widgets/announcement.dart';
 import '../widgets/sky_card.dart';
 import 'prayer_screen.dart';
@@ -124,6 +125,69 @@ class _HomeTabState extends State<HomeTab> {
           SliverToBoxAdapter(child: _Header(onOpenSearch: onOpenSearch, onOpenMore: widget.onOpenMore)),
           const SliverToBoxAdapter(child: HomeAnnouncement(place: 'top')),
           const SliverToBoxAdapter(child: LiveBanner()),
+          SliverToBoxAdapter(child: LatestLessonCard(recordings: _recs)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              child: Row(children: [
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(54),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
+                    icon: const Icon(Icons.forum_rounded),
+                    label: const Text('اسأل الشيخ', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AskScreen())),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(54),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
+                    icon: const Icon(Icons.groups_rounded),
+                    label: const Text('المشايخ الثقات', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () => Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => const TrustedScholarsScreen())),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+          const SliverToBoxAdapter(child: BenefitCard()),
+          const SliverToBoxAdapter(child: ChapterGrid()),
+          if (_updateAt != null)
+            SliverToBoxAdapter(
+              child: _Banner(
+                icon: Icons.system_update,
+                title: 'يوجد تحديث جديد للتطبيق',
+                subtitle: 'اضغط لتحميل النسخة الجديدة',
+                note: 'صدر ${updateTimeText(_updateAt!)}',
+                url: AppConfig.apkUrl,
+              ),
+            ),
+          if (kIsWeb)
+            const SliverToBoxAdapter(
+              child: _Banner(
+                icon: Icons.android,
+                title: 'حمّل تطبيق «سلمان العماد»',
+                color: Color(0xFFB3261E),
+                subtitle: 'لأجهزة أندرويد — يعمل دون إنترنت',
+                url: AppConfig.apkUrl,
+              ),
+            ),
+          // The newest answers and recordings, side by side.
+          SliverToBoxAdapter(child: _LatestBoard(recordings: _recs)),
+          const SliverToBoxAdapter(child: OccasionCard()),
+          // Back to where the reader stopped.
+          const SliverToBoxAdapter(child: _Resume()),
+          SliverToBoxAdapter(child: _TodayStrip(onSetWird: widget.onOpenMore)),
+          const SliverToBoxAdapter(child: LessonsHomeCard()),
+          if (repo.fatwaOfDay != null)
+            SliverToBoxAdapter(child: _FatwaOfDay(fatwa: repo.fatwaOfDay!)),
+          const SliverToBoxAdapter(child: _DailyVerse()),
           // The search in the trusted scholars' books, with the AI.
           SliverToBoxAdapter(
             child: Padding(
@@ -178,39 +242,6 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ),
           ),
-          if (_updateAt != null)
-            SliverToBoxAdapter(
-              child: _Banner(
-                icon: Icons.system_update,
-                title: 'يوجد تحديث جديد للتطبيق',
-                subtitle: 'اضغط لتحميل النسخة الجديدة',
-                note: 'صدر ${updateTimeText(_updateAt!)}',
-                url: AppConfig.apkUrl,
-              ),
-            ),
-          if (kIsWeb)
-            const SliverToBoxAdapter(
-              child: _Banner(
-                icon: Icons.android,
-                title: 'حمّل تطبيق «سلمان العماد»',
-                color: Color(0xFFB3261E),
-                subtitle: 'لأجهزة أندرويد — يعمل دون إنترنت',
-                url: AppConfig.apkUrl,
-              ),
-            ),
-          // The newest answers and recordings, side by side.
-          SliverToBoxAdapter(child: _LatestBoard(recordings: _recs)),
-          const SliverToBoxAdapter(child: OccasionCard()),
-          // Back to where the reader stopped.
-          const SliverToBoxAdapter(child: _Resume()),
-          // The chapters, as a row that moves right and left.
-          const SliverToBoxAdapter(child: _ChapterStrip()),
-          SliverToBoxAdapter(child: _TodayStrip(onSetWird: widget.onOpenMore)),
-          const SliverToBoxAdapter(child: LessonsHomeCard()),
-          if (repo.fatwaOfDay != null)
-            SliverToBoxAdapter(child: _FatwaOfDay(fatwa: repo.fatwaOfDay!)),
-          const SliverToBoxAdapter(child: _DailyVerse()),
-          const SliverToBoxAdapter(child: BenefitCard()),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
@@ -308,7 +339,6 @@ class _HomeTabState extends State<HomeTab> {
           ],
           // «الأسئلة»: today's question and a button to the section, after the videos.
           const SliverToBoxAdapter(child: _GroupTitle('الأسئلة', Icons.quiz_outlined)),
-          const SliverToBoxAdapter(child: TourHomeCard()),
           const SliverToBoxAdapter(child: QuizHomeStrip()),
           if (repo.channel.isNotEmpty) ...[
             SliverToBoxAdapter(
@@ -494,7 +524,7 @@ class _Header extends StatelessWidget {
                   const SizedBox(width: 10),
                   Text('سلمان العماد',
                       style: TextStyle(
-                          fontFamily: 'Tajawal', color: ink, fontSize: 21, fontWeight: FontWeight.bold)),
+                          fontFamily: 'Tajawal', color: ink, fontSize: 23, fontWeight: FontWeight.bold)),
                   const Spacer(),
                   IconButton(
                     tooltip: dark ? 'الوضع الفاتح' : 'الوضع الداكن',
@@ -508,17 +538,9 @@ class _Header extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 22),
-              const Text('أهلاً بك في تطبيق الشيخ',
-                  style: TextStyle(
-                      fontFamily: 'Amiri', color: kGoldChip, fontSize: 19, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 2),
-              Text('سلمان بن صالح العماد',
-                  style: TextStyle(
-                      fontFamily: 'Tajawal', color: ink, fontSize: 29, fontWeight: FontWeight.bold, height: 1.5)),
-              const SizedBox(height: 8),
-              Text('أجوبة، ومقالات، وكتب، وصوتيات، ومرئيات، مرتّبة على الأبواب مع إمكانية البحث.',
-                  style: TextStyle(color: soft, fontSize: 15, height: 1.7)),
+              const SizedBox(height: 6),
+              Text('دروس وفوائد وأجوبة الشيخ سلمان بن صالح العماد',
+                  style: TextStyle(color: soft, fontSize: 14.5, height: 1.7)),
               const SizedBox(height: 18),
               Material(
                 color: dark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -535,7 +557,7 @@ class _Header extends StatelessWidget {
                         Icon(Icons.search, color: soft),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text('ابحث، مثل: الأذان', style: TextStyle(color: soft, fontSize: 16)),
+                          child: Text('ابحث في دروس الشيخ وأجوبته', style: TextStyle(color: soft, fontSize: 16)),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
@@ -905,58 +927,6 @@ class _ResumeState extends State<_Resume> {
                   () => openBook(context, book)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// The chapters as round buttons in one row.
-class _ChapterStrip extends StatelessWidget {
-  const _ChapterStrip();
-
-  @override
-  Widget build(BuildContext context) {
-    final repo = Repository.instance;
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: _AutoRow(
-          height: 96,
-          step: 164,
-          gap: 6,
-          itemCount: repo.chapters.length,
-          itemBuilder: (context, i) {
-            final c = repo.chapters[i];
-            return InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () =>
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChapterScreen(chapter: c))),
-              child: SizedBox(
-                width: 76,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: kGold.withValues(alpha: 0.14),
-                        border: Border.all(color: kGold.withValues(alpha: 0.6)),
-                      ),
-                      child: Icon(chapterIcon(c.icon), color: kGoldChip, size: 26),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(c.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
-                    repo.newChapters.contains(c.id)
-                        ? const Text('جديد', style: TextStyle(fontSize: 10.5, color: Color(0xFFC62828), fontWeight: FontWeight.bold))
-                        : Text('${repo.countInChapter(c.id)}', style: const TextStyle(fontSize: 10.5, color: Colors.grey)),
-                  ],
-                ),
-              ),
-            );
-          },
       ),
     );
   }

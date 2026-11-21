@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../screens/challenge_screens.dart';
 import '../screens/quiz_screens.dart';
 import '../services/cloud.dart';
 import '../theme.dart';
@@ -43,9 +42,7 @@ class AnnouncementCard extends StatelessWidget {
 
   void _open(BuildContext context) {
     if (preview) return;
-    if (action == 'challenges') {
-      openChallenges(context);
-    } else if (action == 'quiz') {
+    if (action == 'quiz') {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => const QuizHomeScreen()));
     }
   }
@@ -71,7 +68,7 @@ class AnnouncementCard extends StatelessWidget {
                 backgroundColor: light ? const Color(0xFF3A2A00) : Colors.white,
                 foregroundColor: light ? Colors.white : bg),
             icon: Icon(action == 'challenges' ? Icons.bolt : Icons.quiz_outlined),
-            label: Text(button.trim().isNotEmpty ? button.trim() : (action == 'challenges' ? 'افتح التحدّيات' : 'افتح الأسئلة')),
+            label: Text(button.trim().isNotEmpty ? button.trim() : 'افتح الأسئلة'),
             onPressed: () => _open(context),
           ),
         ],

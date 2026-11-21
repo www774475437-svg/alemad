@@ -678,7 +678,18 @@ class _AnswerBodyState extends State<_AnswerBody> {
               ),
             ),
           ),
+        const SizedBox(height: 6),
+        SelectableText(fatwa.title,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontFamily: 'Amiri', fontSize: 25 * scale, fontWeight: FontWeight.bold, height: 1.7)),
+        const SizedBox(height: 8),
+        Center(
+          child: Container(
+              width: 64, height: 3, decoration: BoxDecoration(color: kGold, borderRadius: BorderRadius.circular(2))),
+        ),
+        const SizedBox(height: 14),
         Wrap(
+          alignment: WrapAlignment.center,
           spacing: 6,
           runSpacing: 6,
           children: [
@@ -696,10 +707,6 @@ class _AnswerBodyState extends State<_AnswerBody> {
               chip(Icons.event_outlined, Hijri.parse(fatwa.date) == null ? fatwa.date : '${Hijri.parse(fatwa.date)} · ${fatwa.date}'),
           ],
         ),
-        const SizedBox(height: 14),
-        SelectableText(fatwa.title,
-            style: TextStyle(
-                fontFamily: 'Tajawal', fontSize: 21 * scale, fontWeight: FontWeight.bold, height: 1.6)),
         const SizedBox(height: 12),
         _SummaryLine(fatwa: fatwa, scale: scale),
         if (fatwa.question.isNotEmpty) ...[
@@ -1183,17 +1190,14 @@ class _Ornament extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget line() => Expanded(child: Container(height: 1, color: kGold.withValues(alpha: 0.5)));
-    return Row(
-      children: [
-        line(),
-        const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.diamond, size: 10, color: kGold)),
-        Text(label,
-            style: const TextStyle(
-                fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 16, color: kGoldChip)),
-        const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.diamond, size: 10, color: kGold)),
-        line(),
-      ],
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(color: brandColor(context), borderRadius: BorderRadius.circular(20)),
+        child: Text(label,
+            style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+      ),
     );
   }
 }
@@ -1240,10 +1244,8 @@ class _Block extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       decoration: BoxDecoration(
         color: highlight ? kGold.withValues(alpha: 0.10) : null,
-        borderRadius: BorderRadius.circular(16),
-        border: BorderDirectional(
-          start: BorderSide(color: highlight ? kGold : scheme.outlineVariant, width: 4),
-        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: highlight ? kGold.withValues(alpha: .7) : scheme.outlineVariant, width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

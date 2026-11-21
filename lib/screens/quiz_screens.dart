@@ -169,7 +169,6 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
                           ),
                         ]),
                       ),
-                      const Padding(padding: EdgeInsets.fromLTRB(12, 10, 12, 0), child: ChallengeButton()),
                       const FridayCard(),
                       if (quiz.thanks.isNotEmpty)
                         Padding(
@@ -1170,7 +1169,6 @@ class _QuizHomeStripState extends State<QuizHomeStrip> {
               ),
             ),
             const LeadersHomeCard(),
-            const Padding(padding: EdgeInsets.fromLTRB(12, 10, 12, 0), child: ChallengeButton()),
           ]);
         },
       );

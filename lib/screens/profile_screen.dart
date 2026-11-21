@@ -12,8 +12,6 @@ import '../services/quiz.dart';
 import '../services/site_files.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import 'challenge_screens.dart';
-import '../services/tour.dart';
 import 'quiz_screens.dart';
 
 Future<void> openDashboard(BuildContext context) =>
@@ -136,11 +134,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     trailing: const Icon(Icons.chevron_left),
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const QuizProfileScreen())),
                   ),
-                  ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.bolt),
-                    title: Text('فزت في ${ch.wins} تحدّياً (${ch.winsDuel} فردي، ${ch.winsGroup} جماعي) من ${ch.played}'),
-                  ),
                 ]),
               ),
               const _Head('أوسمتي'),
@@ -259,17 +252,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     Profiles.instance.load().then((_) => mounted ? setState(() => _loading = false) : null);
   }
 
-  Future<void> _challenge() async {
-    final (code, err) = await Challenges.instance.create(mode: 'duel');
-    if (!mounted) return;
-    if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
-      return;
-    }
-    await Share.share('أتحدّاك في أسئلة تطبيق «سلمان العماد» ⚡\nادخل التحدّي رقم $code:\n${AppConfig.siteUrl}#/c/$code');
-    if (mounted) Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChallengeRoom(code: code!)));
-  }
-
   @override
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: Profiles.instance,
@@ -286,7 +268,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     ? const EmptyState(
                         icon: Icons.person_search,
                         text: 'لا يوجد ملف بهذا الرقم بعد.\nتظهر الملفات بعد أن يفتح صاحبها النسخة الجديدة، وتتحدّث كل 6 ساعات.')
-                    : ProfileView(no: no, m: m, me: me, onChallenge: me ? null : _challenge),
+                    : ProfileView(no: no, m: m, me: me),
           );
         },
       );
@@ -385,21 +367,9 @@ class ProfileView extends StatelessWidget {
           box('أيام متتالية', n('d'), Icons.local_fire_department, const Color(0xFFB0602A)),
           box('أجوبة قرأها', n('rd'), Icons.menu_book, const Color(0xFF4A1620)),
           box('أسئلة أصابها', n('r'), Icons.check_circle, const Color(0xFF2E7D32)),
-          box('تحديات لعبها', n('cp'), Icons.bolt, const Color(0xFF7A1F1F)),
-          box('فاز فيها', n('cw'), Icons.emoji_events, const Color(0xFF9C7A1E)),
           box('تسجيلات سمعها', n('ls'), Icons.headphones, const Color(0xFF3B4A8C)),
         ],
       ),
-      if (Tour.instance.winsOf(int.tryParse('$no') ?? 0) > 0)
-        Card(
-          color: kGold.withValues(alpha: .15),
-          margin: const EdgeInsets.only(top: 10),
-          child: ListTile(
-            leading: const Icon(Icons.emoji_events, color: kGold, size: 34),
-            title: const Text('بطل الجمعة', style: TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 18)),
-            subtitle: Text('فاز ببطولة الجمعة ${Tour.instance.winsOf(int.tryParse('$no') ?? 0)} مرة'),
-          ),
-        ),
       if (badges.isNotEmpty) ...[
         const _Head('الأوسمة'),
         Wrap(spacing: 8, runSpacing: 8, children: [
@@ -547,20 +517,13 @@ class _FollowingScreenState extends State<FollowingScreen> {
               title: Text(name.isEmpty ? 'رقم $no' : name, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(m == null
                   ? 'لم يتحدّث ملفه بعد'
-                  : '${Progress.rankOf(n('p'))} · 🔥 ${n('d')} يوم   📖 ${n('rd')}   🏆 ${n('cw')} من ${n('cp')}'),
+                  : '${Progress.rankOf(n('p'))} · 🔥 ${n('d')} يوم   📖 ${n('rd')}'),
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                 IconButton(
                   tooltip: friend ? 'إزالة من الأصدقاء' : 'أضفه إلى الأصدقاء',
                   icon: Icon(friend ? Icons.star_rounded : Icons.star_outline_rounded, color: friend ? kGold : null),
                   onPressed: () => pr.toggleFriend(no),
                 ),
-                if (friend)
-                  IconButton(
-                    tooltip: 'تحدَّه',
-                    icon: const Icon(Icons.bolt, color: kGold),
-                    onPressed: () => Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (_) => PublicProfileScreen(no: int.parse(no)))),
-                  ),
               ]),
               onTap: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => PublicProfileScreen(no: int.parse(no)))),
@@ -593,7 +556,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                     : ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [for (final no in l) tile(no)]),
                 friends.isEmpty
                     ? const EmptyState(
-                        icon: Icons.star_outline_rounded, text: 'اضغط النجمة بجانب من تتابعه ليصير في أصدقائك، فتتحدّاه بسرعة.')
+                        icon: Icons.star_outline_rounded, text: 'اضغط النجمة بجانب من تتابعه ليصير في أصدقائك.')
                     : ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [for (final no in friends) tile(no)]),
                 ListView(padding: const EdgeInsets.all(12), children: [
                   const Text('من قرأ أكثر هذا الشهر بينك وبين من تتابعهم. يتحدّث كل بضع ساعات.',

@@ -159,7 +159,7 @@ class MoreTab extends StatelessWidget {
               ),
               ListTile(
                 leading: const _IconBox(Icons.auto_awesome_outlined),
-                title: const Text('فوائدي المحفوظة'),
+                title: const Text('دفتري'),
                 subtitle: const Text('الجمل التي حفظتها من الكتب والأجوبة'),
                 trailing: const Icon(Icons.chevron_left),
                 onTap: () => Navigator.of(context)
@@ -451,7 +451,7 @@ class MoreTab extends StatelessWidget {
               ListTile(
                 leading: const _IconBox(Icons.widgets_outlined),
                 title: const Text('ويدجت الشاشة الرئيسية'),
-                subtitle: const Text('جواب اليوم، ذِكر، قراءتي، سؤال اليوم، بطولة الجمعة، المواقيت'),
+                subtitle: const Text('جواب اليوم، ذِكر، قراءتي، سؤال اليوم، المواقيت'),
                 trailing: const Icon(Icons.chevron_left),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WidgetsScreen())),
               ),

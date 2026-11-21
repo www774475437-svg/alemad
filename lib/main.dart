@@ -16,9 +16,7 @@ import 'services/day_log.dart';
 import 'services/fresh_posts.dart';
 import 'services/live_feed.dart';
 import 'services/challenge.dart';
-import 'services/tour.dart';
 import 'screens/content_screens.dart';
-import 'screens/challenge_screens.dart';
 import 'services/notifications.dart';
 import 'services/prayer.dart';
 import 'services/reminders.dart';
@@ -32,7 +30,6 @@ import 'services/quiz.dart';
 import 'screens/adhkar_screen.dart';
 import 'screens/quiz_screens.dart' show QuizHomeScreen;
 import 'screens/profile_screen.dart' show DashboardScreen;
-import 'screens/tour_screens.dart' show TourScreen, TourRecordScreen;
 import 'widgets/common.dart' show openFatwa, openUrl;
 
 Future<void> main() async {
@@ -64,11 +61,7 @@ Future<void> main() async {
     if (Cloud.instance.user != null) Challenges.instance.load();
     // Invites to a challenge by one's number: looked for every 30 seconds
     // while the app is open, and at once when it comes back to the front.
-    Challenges.instance.onInvite = _showInvite;
-    Challenges.instance.startInvites();
-    Tour.instance.load();
     AppLifecycleListener(onResume: () {
-      Challenges.instance.checkInvites();
       _openFromWidget();
       HomeWidgets.push();
     });
@@ -168,36 +161,10 @@ Future<void> _openFromWidget() async {
     'dhikr' => const AdhkarScreen(),
     'quiz' => const QuizHomeScreen(),
     'read' => const DashboardScreen(),
-    'tour' => Tour.instance.showCard ? TourScreen(dayKey: Tour.keyOf(Tour.nextStart())) : const TourRecordScreen(),
     _ => const SizedBox.shrink(),
   };
   if (page is SizedBox) return;
   nav.push(MaterialPageRoute(builder: (_) => page));
-}
-
-void _showInvite(String code, String by, String mode) {
-  final what = mode == 'duel' ? 'تحدٍّ فردي' : 'تحدٍّ جماعي';
-  OnceNotifications.showNow('دعوة إلى $what ⚡', 'دعاك $by إلى $what، ادخل التطبيق وانضمّ خلال دقيقتين.');
-  final ctx = appNavKey.currentContext;
-  if (ctx == null) return;
-  showDialog<void>(
-    context: ctx,
-    builder: (d) => AlertDialog(
-      icon: const Icon(Icons.bolt, size: 40, color: Color(0xFFC9A227)),
-      title: Text('دعوة إلى $what'),
-      content: Text('دعاك $by إلى $what في الأسئلة.\nرقم الغرفة: $code', textAlign: TextAlign.center, style: const TextStyle(height: 1.8)),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(d), child: const Text('لاحقاً')),
-        FilledButton(
-          onPressed: () {
-            Navigator.pop(d);
-            appNavKey.currentState?.push(MaterialPageRoute(builder: (_) => ChallengeRoom(code: code, autoJoin: true)));
-          },
-          child: const Text('انضمّ الآن'),
-        ),
-      ],
-    ),
-  );
 }
 
 /// Routes: "/" home, "/fatwa/<id>" a single fatwa (shareable web link).
@@ -205,9 +172,6 @@ Route<dynamic>? onGenerateRoute(RouteSettings settings) {
   final name = settings.name ?? '/';
   if (name.startsWith('/i/')) {
     DayLog.instance.invitedBy(name.substring(3));
-  }
-  if (name.startsWith('/c/')) {
-    return MaterialPageRoute(settings: settings, builder: (_) => ChallengeRoom(code: name.substring(3), autoJoin: true));
   }
   if (name.startsWith('/s/')) {
     return MaterialPageRoute(settings: settings, builder: (_) => SeriesScreen(seriesId: name.substring(3)));
@@ -271,14 +235,6 @@ class AlemadApp extends StatelessWidget {
         // A shared link to one fatwa opens it directly, with home underneath.
         onGenerateInitialRoutes: (initial) {
           if (initial.startsWith('/i/')) DayLog.instance.invitedBy(initial.substring(3));
-          if (initial.startsWith('/c/')) {
-            return [
-              MaterialPageRoute(settings: const RouteSettings(name: '/'), builder: (_) => const HomeShell()),
-              MaterialPageRoute(
-                  settings: RouteSettings(name: initial),
-                  builder: (_) => ChallengeRoom(code: initial.substring(3), autoJoin: true)),
-            ];
-          }
           if (initial.startsWith('/s/')) {
             return [
               MaterialPageRoute(settings: const RouteSettings(name: '/'), builder: (_) => const HomeShell()),

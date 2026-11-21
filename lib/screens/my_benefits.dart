@@ -47,7 +47,7 @@ Future<void> benefitSheet(BuildContext context, {required String text, required 
                     Repository.instance.addBenefit(c.text, source);
                     Navigator.pop(sheet);
                     ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('حُفظت في «فوائدي المحفوظة»')));
+                        const SnackBar(content: Text('حُفظت في «دفتري»')));
                   },
                 ),
               ),
@@ -80,7 +80,33 @@ class MyBenefitsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('فوائدي المحفوظة')),
+      appBar: AppBar(title: const Text('دفتري')),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.edit),
+        label: const Text('اكتب فائدة'),
+        onPressed: () async {
+          final c = TextEditingController();
+          final ok = await showDialog<bool>(
+            context: context,
+            builder: (d) => AlertDialog(
+              title: const Text('فائدة جديدة'),
+              content: TextField(
+                controller: c,
+                autofocus: true,
+                minLines: 3,
+                maxLines: 8,
+                maxLength: 1200,
+                decoration: const InputDecoration(hintText: 'اكتب ما تريد حفظه في دفترك'),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('إلغاء')),
+                FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('حفظ')),
+              ],
+            ),
+          );
+          if (ok == true) Repository.instance.addBenefit(c.text, '');
+        },
+      ),
       body: ListenableBuilder(
         listenable: Repository.instance,
         builder: (context, _) {
@@ -88,10 +114,10 @@ class MyBenefitsScreen extends StatelessWidget {
           if (list.isEmpty) {
             return const EmptyState(
                 icon: Icons.auto_awesome_outlined,
-                text: 'لا فوائد محفوظة بعد.\nفي الكتاب أو الجواب اضغط «فائدة» واحفظ الجملة التي تعجبك.');
+                text: 'دفترك فارغ.\nاكتب فائدة بنفسك، أو في الكتاب أو الجواب اضغط «فائدة» واحفظ الجملة التي تعجبك.');
           }
           return ListView.builder(
-            padding: const EdgeInsets.only(top: 6, bottom: 24),
+            padding: const EdgeInsets.only(top: 6, bottom: 96),
             itemCount: list.length,
             itemBuilder: (context, i) {
               final b = list[i];

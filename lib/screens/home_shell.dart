@@ -12,13 +12,11 @@ import '../theme.dart';
 import '../services/cloud.dart';
 import '../services/net.dart';
 import 'account_screens.dart';
-import 'books_tab.dart';
+import 'audio_library.dart';
+import 'sections.dart';
 import 'extra_screens.dart';
-import 'favorites_tab.dart';
 import 'home_tab.dart';
 import 'more_tab.dart';
-import 'ask_screen.dart';
-import 'trusted_screens.dart';
 import 'search_tab.dart';
 
 class HomeShell extends StatefulWidget {
@@ -121,7 +119,7 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
         }
         final staff = cloud.ready && cloud.isAdmin;
         // «الإدارة» exists only for the developer, the sheikh, admins and editors.
-        final ids = ['home', 'books', 'saved', 'ask', if (staff) 'admin', 'scholars', 'more'];
+        final ids = ['home', 'lessons', 'audio', 'library', if (staff) 'admin', 'more'];
         var index = ids.indexOf(_tab);
         if (index < 0) index = 0;
         _opened.add(ids[index]);
@@ -136,16 +134,14 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
                     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SearchTab())),
                 onOpenMore: () => _goTo('more'),
               );
-            case 'books':
-              return const BooksTab();
-            case 'saved':
-              return const FavoritesTab();
-            case 'ask':
-              return const AskScreen();
+            case 'lessons':
+              return const LessonsTab();
+            case 'audio':
+              return const AudioLibraryScreen();
+            case 'library':
+              return const LibraryTab();
             case 'admin':
               return const AdminScreen();
-            case 'scholars':
-              return const TrustedScholarsScreen();
             default:
               return const MoreTab();
           }
@@ -155,18 +151,16 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
           switch (id) {
             case 'home':
               return (Icons.home_outlined, Icons.home_rounded, 'الرئيسية', 0);
-            case 'books':
-              return (Icons.menu_book_outlined, Icons.menu_book_rounded, 'الكتب', 0);
-            case 'saved':
-              return (Icons.bookmark_border_rounded, Icons.bookmark_rounded, 'المحفوظات', 0);
-            case 'ask':
-              return (Icons.forum_outlined, Icons.forum_rounded, 'اسأل الشيخ', cloud.unseenReplies);
+            case 'lessons':
+              return (Icons.school_outlined, Icons.school_rounded, 'الدروس', 0);
+            case 'audio':
+              return (Icons.headphones_outlined, Icons.headphones_rounded, 'الصوتيات', 0);
+            case 'library':
+              return (Icons.local_library_outlined, Icons.local_library_rounded, 'المكتبة', 0);
             case 'admin':
               return (Icons.admin_panel_settings_outlined, Icons.admin_panel_settings, 'الإدارة', cloud.newQuestions);
-            case 'scholars':
-              return (Icons.groups_outlined, Icons.groups_rounded, 'المشايخ الثقات', 0);
             default:
-              return (Icons.grid_view_outlined, Icons.grid_view_rounded, 'المزيد', 0);
+              return (Icons.grid_view_outlined, Icons.grid_view_rounded, 'المزيد', cloud.unseenReplies);
           }
         }
 

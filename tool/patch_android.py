@@ -565,7 +565,7 @@ for k, (a, b, c) in {
 </LinearLayout>
 """, encoding="utf-8")
 names = {"answer": ("AnswerWidget", "جواب اليوم"), "dhikr": ("DhikrWidget", "ذِكر"), "read": ("ReadWidget", "قراءتي هذا الشهر"),
-         "quiz": ("QuizWidget", "سؤال اليوم"), "tour": ("TourWidget", "بطولة الجمعة")}
+         "quiz": ("QuizWidget", "سؤال اليوم")}
 st = strings.read_text(encoding="utf-8")
 for k, (cls, label) in names.items():
     (res_main / "xml" / f"{k}_widget_info.xml").write_text(f"""<?xml version="1.0" encoding="utf-8"?>
