@@ -232,7 +232,6 @@ class AlemadApp extends StatelessWidget {
             ),
           ),
           ),
-          ),
         ),
         onGenerateRoute: onGenerateRoute,
         // A shared link to one fatwa opens it directly, with home underneath.
