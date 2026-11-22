@@ -218,7 +218,8 @@ class AlemadApp extends StatelessWidget {
             textScaler: TextScaler.linear(repo.fontScale * (repo.easyMode ? 1.2 : 1.0)),
           ),
           // While a recording plays, a slim bar stays at the top of every page.
-          child: _Easy(
+          child: _Desk(
+            child: _Easy(
             on: repo.easyMode,
             child: ListenableBuilder(
             listenable: AudioCenter.instance,
@@ -229,6 +230,8 @@ class AlemadApp extends StatelessWidget {
                     Expanded(child: MediaQuery.removePadding(context: context, removeTop: true, child: child!)),
                   ]),
             ),
+          ),
+          ),
           ),
         ),
         onGenerateRoute: onGenerateRoute,
@@ -263,6 +266,52 @@ class AlemadApp extends StatelessWidget {
             ),
           ];
         },
+      ),
+    );
+  }
+}
+
+
+/// On a laptop or a wide screen the app sits in the middle as one tidy
+/// sheet, over a calm background, instead of stretching edge to edge.
+class _Desk extends StatelessWidget {
+  final Widget child;
+  const _Desk({required this.child});
+
+  static const maxWidth = 1120.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    if (mq.size.width <= maxWidth + 40) return child;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: dark
+              ? const [Color(0xFF0C0C0E), Color(0xFF1A1014), Color(0xFF0C0C0E)]
+              : const [Color(0xFFF3E7E2), Color(0xFFFBF7F4), Color(0xFFEFE3D0)],
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          child: Container(
+            width: maxWidth,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: kGold.withValues(alpha: .45)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .5 : .16), blurRadius: 40, offset: const Offset(0, 14))],
+            ),
+            child: MediaQuery(
+              data: mq.copyWith(size: Size(maxWidth, mq.size.height - 36)),
+              child: child,
+            ),
+          ),
+        ),
       ),
     );
   }

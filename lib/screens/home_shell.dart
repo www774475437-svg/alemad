@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
 import '../theme.dart';
+import '../widgets/common.dart';
 
 import '../services/cloud.dart';
 import '../services/net.dart';
@@ -168,6 +169,30 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
         final bottom = MediaQuery.paddingOf(context).bottom;
         const barH = 66.0;
         final from = ids.indexOf(_from) < 0 ? index : ids.indexOf(_from);
+        // Laptop and wide screens: the sections stand in a side column.
+        if (MediaQuery.sizeOf(context).width >= 900) {
+          return Scaffold(
+            body: Row(children: [
+              _SideNav(
+                items: [for (final id in ids) dest(id)],
+                index: index,
+                onTap: (i) => _goTo(ids[i]),
+                onSearch: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SearchTab())),
+              ),
+              Expanded(
+                child: Column(children: [
+                  Expanded(
+                    child: IndexedStack(
+                      index: index,
+                      children: [for (final id in ids) KeyedSubtree(key: ValueKey(id), child: page(id))],
+                    ),
+                  ),
+                  const _OfflineBar(),
+                ]),
+              ),
+            ]),
+          );
+        }
         return Scaffold(
           body: Stack(children: [
             Positioned.fill(
@@ -443,4 +468,91 @@ class _OfflineBarState extends State<_OfflineBar> {
                 ),
         ),
       );
+}
+
+
+/// The side column of sections on wide screens.
+class _SideNav extends StatelessWidget {
+  final List<(IconData, IconData, String, int)> items;
+  final int index;
+  final ValueChanged<int> onTap;
+  final VoidCallback onSearch;
+  const _SideNav({required this.items, required this.index, required this.onTap, required this.onSearch});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Pal.accent(context);
+    return Container(
+      width: 250,
+      decoration: BoxDecoration(
+        color: Pal.card(context),
+        border: BorderDirectional(end: BorderSide(color: Pal.line(context))),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 22, 14, 16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              const ClipOval(child: AppLogo(size: 46)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('سلمان العماد',
+                    style: TextStyle(fontFamily: kUiFont, fontSize: 20, fontWeight: FontWeight.bold, color: accent)),
+              ),
+            ]),
+            const SizedBox(height: 20),
+            Material(
+              color: Pal.soft(context),
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: onSearch,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(children: [
+                    Icon(Icons.search_rounded, color: Pal.muted(context)),
+                    const SizedBox(width: 8),
+                    Text('بحث', style: TextStyle(color: Pal.muted(context), fontSize: 15)),
+                  ]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            for (var i = 0; i < items.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Material(
+                  color: i == index ? Pal.soft(context) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => onTap(i),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                      child: Row(children: [
+                        Icon(i == index ? items[i].$2 : items[i].$1,
+                            color: i == index ? accent : Pal.ink(context).withValues(alpha: .78), size: 25),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(items[i].$3,
+                              style: TextStyle(
+                                  fontFamily: kUiFont,
+                                  fontSize: 16,
+                                  fontWeight: i == index ? FontWeight.bold : FontWeight.w600,
+                                  color: i == index ? accent : Pal.ink(context))),
+                        ),
+                        if (items[i].$4 > 0) Badge(label: Text('${items[i].$4}')),
+                      ]),
+                    ),
+                  ),
+                ),
+              ),
+            const Spacer(),
+            Text('دروس وفوائد وأجوبة الشيخ\nسلمان بن صالح العماد',
+                textAlign: TextAlign.center, style: TextStyle(color: Pal.muted(context), fontSize: 12.5, height: 1.7)),
+          ]),
+        ),
+      ),
+    );
+  }
 }
