@@ -234,10 +234,48 @@ def main():
     n_less = sum(len(c['items']) for l in data['lessons'] for c in l['courses'])
     print('audio', n_audio, 'lesson files', n_less)
     if n_audio + n_less == 0 and not data['books']:
-        print('nothing read; keeping the old file')
+        print('nothing read; keeping the old files')
         return 1
-    with open(os.path.join(out, 'site.json'), 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
+
+    def dump(name, obj):
+        path = os.path.join(out, name)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(obj, f, ensure_ascii=False, separators=(',', ':'))
+
+    # A small index the app opens with; each list is its own little file,
+    # read only when the listener opens it.
+    titles = {}
+    for g in data['audio']:
+        for c in g['cats']:
+            key = 's%d' % c['id']
+            dump('lists/%s.json' % key, {'name': c['name'], 'items': c['items']})
+            titles[key] = {'n': c['name'], 't': [i['t'] for i in c['items']]}
+    for l in data['lessons']:
+        for c in l['courses']:
+            key = 'c%d' % c['id']
+            dump('lists/%s.json' % key, {'name': c['name'], 'items': c['items']})
+            titles[key] = {'n': c['name'], 't': [i['t'] for i in c['items']]}
+    khutba = None
+    for g in data['audio']:
+        for c in g['cats']:
+            if c['id'] == 6 and c['items']:
+                khutba = max(c['items'], key=lambda i: i['id'])
+    index = {
+        'v': 2, 'updated': data['updated'], 'khutba': khutba,
+        'audio': [{'group': g['group'], 'cats': [{'id': c['id'], 'key': 's%d' % c['id'], 'name': c['name'], 'n': len(c['items'])}
+                                                 for c in g['cats']]} for g in data['audio']],
+        'lessons': [{'id': l['id'], 'name': l['name'],
+                     'courses': [{'id': c['id'], 'key': 'c%d' % c['id'], 'name': c['name'], 'n': len(c['items'])}
+                                 for c in l['courses']]} for l in data['lessons']],
+        'books': data['books'],
+    }
+    dump('index.json', index)
+    dump('titles.json', titles)
+    dump('texts.json', data['texts'])
+    old = os.path.join(out, 'site.json')
+    if os.path.exists(old):
+        os.remove(old)
     return 0
 
 

@@ -9,18 +9,17 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from channel_to_answers import DATA, classify  # noqa: E402
 
-URL = 'https://raw.githubusercontent.com/www774475437-svg/alemad/site/site.json'
+URL = 'https://raw.githubusercontent.com/www774475437-svg/alemad/site/texts.json'
 FIXED = {'الردود المكتوبة': 'manhaj', 'التنبيهات': 'manhaj'}
 
 
 def main():
     try:
         with urllib.request.urlopen(URL, timeout=60) as r:
-            site = json.loads(r.read().decode('utf-8'))
+            texts = json.loads(r.read().decode('utf-8'))
     except Exception as e:  # noqa
         print('site.json not reached:', e)
         return
-    texts = site.get('texts') or []
     path = os.path.join(DATA, 'fatwas.json')
     answers = json.load(open(path, encoding='utf-8'))
     have = {a['id'] for a in answers}
