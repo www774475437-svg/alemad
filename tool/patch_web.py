@@ -33,12 +33,43 @@ if 'id="loading"' not in h:
     #loading p { color: #fff; font: 16px sans-serif; margin-top: 22px; }
     @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: .8; } }
   </style>
-  <div id="loading"><img src="icons/Icon-192.png" alt=""><p>جارٍ فتح «سلمان العماد»…</p></div>
+  <div id="loading"><img src="icons/Icon-192.png" alt=""><p>جارٍ فتح «سلمان العماد»…</p>
+    <button id="retry" style="display:none;margin-top:18px;padding:12px 26px;border:0;border-radius:24px;background:#C9A54C;color:#000;font:bold 16px sans-serif">إعادة التحميل</button>
+    <p id="why" style="font-size:12px;opacity:.75;max-width:86%;text-align:center;direction:ltr"></p></div>
   <script>
-    window.addEventListener('flutter-first-frame', function () {
-      var l = document.getElementById('loading');
-      if (l) { l.style.opacity = 0; setTimeout(function () { l.remove(); }, 450); }
-    });
+    (function () {
+      var opened = false;
+      window.addEventListener('flutter-first-frame', function () {
+        opened = true;
+        var l = document.getElementById('loading');
+        if (l) { l.style.opacity = 0; setTimeout(function () { l.remove(); }, 450); }
+      });
+      // If the page stays on this screen (an old copy kept by the browser, or
+      // an error), offer a clean reload and show what went wrong.
+      function fresh() {
+        var done = function () { location.replace(location.pathname + '?r=' + Date.now() + location.hash); };
+        try {
+          var jobs = [];
+          if (window.caches) jobs.push(caches.keys().then(function (k) { return Promise.all(k.map(function (n) { return caches.delete(n); })); }));
+          if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (r) { return Promise.all(r.map(function (x) { return x.unregister(); })); }));
+          Promise.all(jobs).then(done, done);
+        } catch (e) { done(); }
+      }
+      function stuck(msg) {
+        if (opened) return;
+        var b = document.getElementById('retry'), w = document.getElementById('why');
+        if (b) { b.style.display = 'block'; b.onclick = fresh; }
+        if (w && msg) w.textContent = String(msg).slice(0, 300);
+      }
+      window.addEventListener('error', function (e) { stuck(e.message || (e.target && (e.target.src || e.target.href)) || 'error'); }, true);
+      window.addEventListener('unhandledrejection', function (e) { stuck(e.reason && (e.reason.message || e.reason)); });
+      setTimeout(function () { stuck(''); }, 20000);
+      // Once, by itself: a first try at a clean reload before asking.
+      setTimeout(function () {
+        if (opened || /[?&]r=/.test(location.search)) return;
+        fresh();
+      }, 45000);
+    })();
   </script>''', 1)
 index.write_text(h, encoding="utf-8")
 
