@@ -113,7 +113,7 @@ class MyBenefitsScreen extends StatelessWidget {
           final list = Repository.instance.myBenefits;
           if (list.isEmpty) {
             return const EmptyState(
-                icon: Icons.auto_awesome_outlined,
+                icon: Icons.lightbulb_outline,
                 text: 'دفترك فارغ.\nاكتب فائدة بنفسك، أو في الكتاب أو الجواب اضغط «فائدة» واحفظ الجملة التي تعجبك.');
           }
           return ListView.builder(

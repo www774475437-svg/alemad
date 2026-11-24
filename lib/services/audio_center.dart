@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -13,7 +14,11 @@ import 'progress.dart';
 /// One thing to listen to: a recording of the channel, or a lesson.
 class AudioItem {
   final String title, url, by, telegram;
-  const AudioItem(this.title, this.url, {this.by = '', this.telegram = ''});
+
+  /// For a recording of the sheikh's site: «list key/id» (e.g. s6/698), so a
+  /// moment of it can be shared as a link.
+  final String ref;
+  const AudioItem(this.title, this.url, {this.by = '', this.telegram = '', this.ref = ''});
   String get key => '${url.hashCode}';
 }
 
@@ -44,6 +49,8 @@ class AudioCenter extends ChangeNotifier {
     final p = AudioPlayer();
     p.playerStateStream.listen((s) {
       if (s.processingState == ProcessingState.completed) {
+        final done = current;
+        if (done != null) setHeard(done.key, true);
         _savePos(zero: true);
         _next();
       }
@@ -213,7 +220,53 @@ class AudioCenter extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('audio_pos_${it.key}', zero ? 0 : _p!.position.inSeconds);
+      // «أكمل الاستماع»: what was playing last, and where.
+      if (!it.url.startsWith('tg:')) {
+        await prefs.setString(
+            'audio_last',
+            jsonEncode({
+              't': it.title,
+              'u': it.url,
+              'by': it.by,
+              'pos': zero ? 0 : _p!.position.inSeconds,
+              'dur': _p!.duration?.inSeconds ?? 0,
+            }));
+      }
     } catch (_) {}
+  }
+
+  /// The recording one stopped at, with the second, or null.
+  static Future<(AudioItem, int, int)?> lastPlayed() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('audio_last');
+      if (raw == null) return null;
+      final m = jsonDecode(raw) as Map;
+      final pos = (m['pos'] as num? ?? 0).toInt(), dur = (m['dur'] as num? ?? 0).toInt();
+      if (pos < 20 || (dur > 0 && pos > dur - 20)) return null; // not begun, or finished
+      return (AudioItem('${m['t']}', '${m['u']}', by: '${m['by'] ?? ''}'), pos, dur);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ------------------------------------------------------------ heard
+  Set<String>? _heard;
+
+  /// The recordings listened to the end (or marked so by hand).
+  Future<Set<String>> heard() async {
+    if (_heard != null) return _heard!;
+    final prefs = await SharedPreferences.getInstance();
+    return _heard = (prefs.getStringList('audio_heard') ?? const []).toSet();
+  }
+
+  Future<void> setHeard(String key, bool on) async {
+    final h = await heard();
+    if (on ? !h.add(key) : !h.remove(key)) return;
+    try {
+      (await SharedPreferences.getInstance()).setStringList('audio_heard', h.toList());
+    } catch (_) {}
+    notifyListeners();
   }
 
   // ------------------------------------------------------------ offline
@@ -253,6 +306,7 @@ class AudioCenter extends ChangeNotifier {
       final dir = Directory(await _dir());
       if (!await dir.exists()) await dir.create(recursive: true);
       await File('${dir.path}/${it.key}.audio').writeAsBytes(res.bodyBytes);
+      await _names((m) => m[it.key] = it.title);
       return null;
     } catch (_) {
       return 'تعذّر التنزيل، تأكد من الاتصال';
@@ -262,11 +316,45 @@ class AudioCenter extends ChangeNotifier {
     }
   }
 
-  Future<void> removeDownload(AudioItem it) async {
+  Future<void> removeDownload(AudioItem it) => removeDownloadKey(it.key);
+
+  Future<void> removeDownloadKey(String key) async {
     try {
-      final f = File('${await _dir()}/${it.key}.audio');
+      final f = File('${await _dir()}/$key.audio');
       if (await f.exists()) await f.delete();
+      await _names((m) => m.remove(key));
     } catch (_) {}
     notifyListeners();
+  }
+
+  /// The titles of what was downloaded, by key (for the storage page).
+  static Future<Map<String, dynamic>> _names([void Function(Map<String, dynamic>)? change]) async {
+    final prefs = await SharedPreferences.getInstance();
+    Map<String, dynamic> m = {};
+    try {
+      m = jsonDecode(prefs.getString('audio_dl_names') ?? '{}') as Map<String, dynamic>;
+    } catch (_) {}
+    if (change != null) {
+      change(m);
+      await prefs.setString('audio_dl_names', jsonEncode(m));
+    }
+    return m;
+  }
+
+  /// Every recording kept on the phone: (key, title, size in bytes).
+  Future<List<(String, String, int)>> downloads() async {
+    if (kIsWeb) return const [];
+    final out = <(String, String, int)>[];
+    try {
+      final dir = Directory(await _dir());
+      if (!await dir.exists()) return out;
+      final names = await _names();
+      await for (final e in dir.list()) {
+        if (e is! File || !e.path.endsWith('.audio')) continue;
+        final key = e.uri.pathSegments.last.replaceAll('.audio', '');
+        out.add((key, '${names[key] ?? 'تسجيل محفوظ'}', await e.length()));
+      }
+    } catch (_) {}
+    return out;
   }
 }

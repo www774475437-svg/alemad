@@ -77,6 +77,27 @@ class BooksStore {
     }
   }
 
+  /// Every book kept on the phone: (book id, size in bytes).
+  static Future<List<(String, int)>> downloaded() async {
+    if (kIsWeb) return const [];
+    final out = <(String, int)>[];
+    try {
+      await for (final e in (await _dir()).list()) {
+        if (e is File && e.path.endsWith('.pdf')) {
+          out.add((e.uri.pathSegments.last.replaceAll('.pdf', ''), await e.length()));
+        }
+      }
+    } catch (_) {}
+    return out;
+  }
+
+  static Future<void> deleteId(String id) async {
+    try {
+      final f = File('${(await _dir()).path}/$id.pdf');
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
+  }
+
   static Future<void> delete(Book b) async {
     final f = await _fileFor(b);
     if (await f.exists()) await f.delete();

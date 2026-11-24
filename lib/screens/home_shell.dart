@@ -18,7 +18,6 @@ import 'sections.dart';
 import 'extra_screens.dart';
 import 'home_tab.dart';
 import 'more_tab.dart';
-import 'search_tab.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -132,7 +131,7 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
               return HomeTab(
                 // Search opens as a full page over home, with a back arrow.
                 onOpenSearch: () =>
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SearchTab())),
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EverythingSearchScreen())),
                 onOpenMore: () => _goTo('more'),
               );
             case 'lessons':
@@ -181,7 +180,7 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
                 items: [for (final id in ids) dest(id)],
                 index: index,
                 onTap: (i) => _goTo(ids[i]),
-                onSearch: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SearchTab())),
+                onSearch: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EverythingSearchScreen())),
               ),
               Expanded(
                 child: Column(children: [
@@ -243,7 +242,7 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
                             customBorder: const CircleBorder(),
                             onTap: () {
                               HapticFeedback.selectionClick();
-                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SearchTab()));
+                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EverythingSearchScreen()));
                             },
                             child: Center(child: Icon(Icons.search_rounded, size: 30, color: Pal.ink(context))),
                           ),

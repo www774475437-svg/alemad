@@ -1,5 +1,6 @@
 import 'benefit_card.dart';
 import 'sections.dart';
+import 'site_screens.dart';
 import 'ask_screen.dart';
 import 'quiz_screens.dart';
 import '../widgets/announcement.dart';
@@ -125,6 +126,8 @@ class _HomeTabState extends State<HomeTab> {
           SliverToBoxAdapter(child: _Header(onOpenSearch: onOpenSearch, onOpenMore: widget.onOpenMore)),
           const SliverToBoxAdapter(child: HomeAnnouncement(place: 'top')),
           const SliverToBoxAdapter(child: LiveBanner()),
+          const SliverToBoxAdapter(child: FridayKhutbaCard()),
+          const SliverToBoxAdapter(child: ContinueListeningCard()),
           SliverToBoxAdapter(child: LatestLessonCard(recordings: _recs)),
           SliverToBoxAdapter(
             child: Padding(

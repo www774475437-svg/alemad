@@ -14,6 +14,7 @@ import '../widgets/common.dart';
 import 'ask_screen.dart';
 import 'audio_library.dart';
 import 'my_benefits.dart' show MyBenefitsScreen;
+import 'site_screens.dart' show StorageScreen;
 import 'recommended_books.dart';
 import 'channel_screen.dart';
 import 'account_screens.dart';
@@ -158,12 +159,20 @@ class MoreTab extends StatelessWidget {
                     .push(MaterialPageRoute(builder: (_) => const MyReadingScreen())),
               ),
               ListTile(
-                leading: const _IconBox(Icons.auto_awesome_outlined),
+                leading: const _IconBox(Icons.lightbulb_outline),
                 title: const Text('دفتري'),
                 subtitle: const Text('الجمل التي حفظتها من الكتب والأجوبة'),
                 trailing: const Icon(Icons.chevron_left),
                 onTap: () => Navigator.of(context)
                     .push(MaterialPageRoute(builder: (_) => const MyBenefitsScreen())),
+              ),
+              ListTile(
+                leading: const _IconBox(Icons.sd_storage_outlined),
+                title: const Text('المساحة'),
+                subtitle: const Text('ما نزّلته من صوتيات وكتب، واحذف منه ما تشاء'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () =>
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StorageScreen())),
               ),
               ListTile(
                 leading: const _IconBox(Icons.bookmarks_outlined),
@@ -204,7 +213,7 @@ class MoreTab extends StatelessWidget {
               _Section(children: [
                 if (Cloud.instance.isFullAdmin) ...[
                   SwitchListTile(
-                    secondary: const _IconBox(Icons.auto_awesome_outlined),
+                    secondary: const _IconBox(Icons.lightbulb_outline),
                     title: const Text('الذكاء الاصطناعي في بحث كتب الثقات'),
                     subtitle: const Text('يقسّم السؤال إلى مسائله'),
                     value: Cloud.instance.aiEnabled,

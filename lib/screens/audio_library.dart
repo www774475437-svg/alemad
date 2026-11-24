@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
@@ -567,6 +568,15 @@ class PlayerSheet extends StatelessWidget {
                   icon: const Icon(Icons.bookmark_add_outlined),
                   label: const Text('علامة هنا'),
                   onPressed: () => _addAudioMark(context, a),
+                ),
+                TextButton.icon(
+                  icon: const Icon(Icons.share_outlined),
+                  label: const Text('شارك هذه الدقيقة'),
+                  onPressed: () {
+                    final sec = a.player.position.inSeconds;
+                    final link = it.ref.isEmpty ? '' : '\n${AppConfig.siteUrl}#/p/${it.ref}/$sec';
+                    Share.share('🎧 ${it.title}\nمن الدقيقة ${fmt(Duration(seconds: sec))}$link\n\n📱 تطبيق «سلمان العماد»');
+                  },
                 ),
                 if (!kIsWeb) _DownloadButton(item: it),
                 TextButton.icon(

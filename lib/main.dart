@@ -24,6 +24,7 @@ import 'services/profiles.dart';
 import 'services/progress.dart';
 import 'theme.dart';
 import 'services/site_data.dart';
+import 'screens/site_screens.dart' show ClipOpener;
 import 'services/home_widgets.dart';
 import 'services/audio_center.dart';
 import 'screens/audio_library.dart' show NowPlayingBar, playerNavKey;
@@ -43,7 +44,8 @@ Future<void> main() async {
   // of the library in the background (unless a link to one answer was opened).
   final quick = kIsWeb && AppConfig.idFromRoute(Uri.base.fragment) == null;
   await Repository.instance.load(prefs, quick: quick);
-  SiteData.instance.load();
+  // The sheikh's site index is read after the first screen is up.
+  Future.delayed(const Duration(milliseconds: 1200), SiteData.instance.load);
   Repository.onSavedListsChanged = () => Cloud.instance.pushUserData();
   // «تابِع باباً»: a notification for each new answer in a followed chapter.
   Repository.onFreshAnswers = (fresh) {
@@ -175,6 +177,8 @@ Route<dynamic>? onGenerateRoute(RouteSettings settings) {
   if (name.startsWith('/i/')) {
     DayLog.instance.invitedBy(name.substring(3));
   }
+  final clip = clipRoute(name);
+  if (clip != null) return MaterialPageRoute(settings: settings, builder: (_) => clip);
   if (name.startsWith('/s/')) {
     return MaterialPageRoute(settings: settings, builder: (_) => SeriesScreen(seriesId: name.substring(3)));
   }
@@ -239,6 +243,13 @@ class AlemadApp extends StatelessWidget {
         // A shared link to one fatwa opens it directly, with home underneath.
         onGenerateInitialRoutes: (initial) {
           if (initial.startsWith('/i/')) DayLog.instance.invitedBy(initial.substring(3));
+          final clip = clipRoute(initial);
+          if (clip != null) {
+            return [
+              MaterialPageRoute(settings: const RouteSettings(name: '/'), builder: (_) => const HomeShell()),
+              MaterialPageRoute(settings: RouteSettings(name: initial), builder: (_) => clip),
+            ];
+          }
           if (initial.startsWith('/s/')) {
             return [
               MaterialPageRoute(settings: const RouteSettings(name: '/'), builder: (_) => const HomeShell()),
@@ -316,4 +327,15 @@ class _Desk extends StatelessWidget {
       ),
     );
   }
+}
+
+
+/// «/p/<list>/<id>/<second>»: a shared moment of a recording.
+Widget? clipRoute(String name) {
+  if (!name.startsWith('/p/')) return null;
+  final parts = name.substring(3).split('/');
+  if (parts.length < 2) return null;
+  final id = int.tryParse(parts[1]);
+  if (id == null) return null;
+  return ClipOpener(listKey: parts[0], id: id, second: parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0);
 }
