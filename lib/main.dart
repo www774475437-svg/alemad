@@ -23,6 +23,7 @@ import 'services/reminders.dart';
 import 'services/profiles.dart';
 import 'services/progress.dart';
 import 'theme.dart';
+import 'services/site_data.dart';
 import 'services/home_widgets.dart';
 import 'services/audio_center.dart';
 import 'screens/audio_library.dart' show NowPlayingBar, playerNavKey;
@@ -42,6 +43,7 @@ Future<void> main() async {
   // of the library in the background (unless a link to one answer was opened).
   final quick = kIsWeb && AppConfig.idFromRoute(Uri.base.fragment) == null;
   await Repository.instance.load(prefs, quick: quick);
+  SiteData.instance.load();
   Repository.onSavedListsChanged = () => Cloud.instance.pushUserData();
   // «تابِع باباً»: a notification for each new answer in a followed chapter.
   Repository.onFreshAnswers = (fresh) {

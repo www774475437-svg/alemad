@@ -11,6 +11,7 @@ import 'chapter_screen.dart';
 import 'content_screens.dart';
 import 'favorites_tab.dart';
 import 'my_benefits.dart';
+import 'site_screens.dart';
 
 /// Whether a title is a Friday sermon.
 bool isKhutba(String title) => title.contains('خطبة') || title.contains('خطب ') || title.contains('الخطبة');
@@ -22,13 +23,18 @@ class LessonsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
-        length: 3,
+        length: 4,
         child: Scaffold(
           appBar: AppBar(
             title: const Text('الدروس'),
-            bottom: const TabBar(tabs: [Tab(text: 'السلاسل العلمية'), Tab(text: 'المرئيات'), Tab(text: 'خطب الجمعة')]),
+            bottom: const TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [
+              Tab(text: 'الدروس العلمية'),
+              Tab(text: 'السلاسل'),
+              Tab(text: 'المرئيات'),
+              Tab(text: 'خطب الجمعة'),
+            ]),
           ),
-          body: const TabBarView(children: [_SeriesList(), _VideoList(), _KhutbaList()]),
+          body: const TabBarView(children: [SiteLessonsView(), _SeriesList(), _VideoList(), _KhutbaList()]),
         ),
       );
 }

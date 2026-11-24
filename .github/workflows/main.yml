@@ -65,6 +65,8 @@ jobs:
 
       - name: Books list from the sheikh's Google Drive
         run: python3 tool/fetch_drive_books.py
+      - name: The sheikh's site list (recordings, lessons, books)
+        run: curl -sfL -m 60 "https://raw.githubusercontent.com/${{ github.repository }}/site/site.json" -o assets/data/site.json.new && mv assets/data/site.json.new assets/data/site.json || true
 
       - name: Latest videos from the sheikh's YouTube channel
         run: python3 tool/fetch_youtube.py
@@ -127,6 +129,8 @@ jobs:
 
       - name: Books list from the sheikh's Google Drive
         run: python3 tool/fetch_drive_books.py
+      - name: The sheikh's site list (recordings, lessons, books)
+        run: curl -sfL -m 60 "https://raw.githubusercontent.com/${{ github.repository }}/site/site.json" -o assets/data/site.json.new && mv assets/data/site.json.new assets/data/site.json || true
 
       - name: Latest videos from the sheikh's YouTube channel
         run: python3 tool/fetch_youtube.py

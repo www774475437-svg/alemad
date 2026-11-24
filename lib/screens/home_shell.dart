@@ -13,7 +13,7 @@ import '../widgets/common.dart';
 import '../services/cloud.dart';
 import '../services/net.dart';
 import 'account_screens.dart';
-import 'audio_library.dart';
+import 'site_screens.dart';
 import 'sections.dart';
 import 'extra_screens.dart';
 import 'home_tab.dart';
@@ -120,7 +120,7 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
         }
         final staff = cloud.ready && cloud.isAdmin;
         // «الإدارة» exists only for the developer, the sheikh, admins and editors.
-        final ids = ['home', 'lessons', 'audio', 'library', if (staff) 'admin', 'more'];
+        final ids = ['home', 'lessons', 'mutun', 'audio', 'library', if (staff) 'admin', 'more'];
         var index = ids.indexOf(_tab);
         if (index < 0) index = 0;
         _opened.add(ids[index]);
@@ -137,8 +137,10 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
               );
             case 'lessons':
               return const LessonsTab();
+            case 'mutun':
+              return const MutunTab();
             case 'audio':
-              return const AudioLibraryScreen();
+              return const SiteAudioTab();
             case 'library':
               return const LibraryTab();
             case 'admin':
@@ -154,6 +156,8 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
               return (Icons.home_outlined, Icons.home_rounded, 'الرئيسية', 0);
             case 'lessons':
               return (Icons.school_outlined, Icons.school_rounded, 'الدروس', 0);
+            case 'mutun':
+              return (Icons.auto_stories_outlined, Icons.auto_stories_rounded, 'المتون', 0);
             case 'audio':
               return (Icons.headphones_outlined, Icons.headphones_rounded, 'الصوتيات', 0);
             case 'library':

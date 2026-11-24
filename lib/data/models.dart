@@ -99,11 +99,26 @@ class Fatwa {
 }
 
 class Book {
-  final String id; // Google Drive file id
+  final String id; // Google Drive file id, or «site-N» for a book of the sheikh's site
   final String title;
   final String folder;
 
-  Book({required this.id, required this.title, required this.folder});
+  /// For a book of the sheikh's site: where its PDF is, its other copy, its
+  /// cover, a word about it, and its level in «مفتاح العلوم» (1-7, 0 for the
+  /// whole set, -1 for other books).
+  final String url, source, cover, about;
+  final int level;
+
+  Book({
+    required this.id,
+    required this.title,
+    required this.folder,
+    this.url = '',
+    this.source = '',
+    this.cover = '',
+    this.about = '',
+    this.level = -1,
+  });
 
   factory Book.fromJson(Map<String, dynamic> j) => Book(
         id: '${j['id']}',
@@ -113,16 +128,15 @@ class Book {
 
   /// Direct download (used inside the app; the link is never shown).
   String get downloadUrl =>
-      'https://drive.usercontent.google.com/download?id=$id&export=download&confirm=t';
+      url.isNotEmpty ? url : 'https://drive.usercontent.google.com/download?id=$id&export=download&confirm=t';
 
   /// The links tried in turn when the app downloads the book.
-  List<String> get downloadUrls => [
-        downloadUrl,
-        'https://drive.google.com/uc?export=download&id=$id&confirm=t',
-      ];
+  List<String> get downloadUrls => url.isNotEmpty
+      ? [url, if (source.isNotEmpty && source != url) source]
+      : [downloadUrl, 'https://drive.google.com/uc?export=download&id=$id&confirm=t'];
 
-  /// On the website, books open in Google's viewer.
-  String get previewUrl => 'https://drive.google.com/file/d/$id/view';
+  /// On the website, books open in the browser's own viewer.
+  String get previewUrl => url.isNotEmpty ? url : 'https://drive.google.com/file/d/$id/view';
 }
 
 class SocialLink {
