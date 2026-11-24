@@ -91,16 +91,25 @@ def clean(text):
     return t.strip()
 
 
+_OPENING = re.compile(r'^(?:بسم الله|الحمد لله|اما بعد|وبعد|تنبيه(?: مهم| هام)?$|وقفه تامل$|سوال مهم$)')
+_DECOR = re.compile(r'^[^\w{﴿«"]+|[^\w}﴾»"؟?!.]+$', re.U)
+
+
 def title_of(text, limit=90):
+    """The first line that says something: not the basmala, not an ornament."""
+    first = ''
     for line in text.split('\n'):
-        line = line.strip(' *_-–—▪•🔹🔸📌❓⁉️')
-        if len(line) >= 8:
-            if len(line) > limit:
-                cut = line[:limit]
-                sp = cut.rfind(' ')
-                line = (cut[:sp] if sp > 40 else cut) + '…'
+        line = _DECOR.sub('', line.replace('*', '').replace('_', ' ')).strip()
+        if len(line) < 8 and not (first == '' and 4 <= len(line)):
+            continue
+        if len(line) > limit:
+            cut = line[:limit]
+            sp = cut.rfind(' ')
+            line = (cut[:sp] if sp > 40 else cut) + '…'
+        first = first or line
+        if len(line) >= 8 and not _OPENING.match(norm(line)):
             return line
-    return text[:limit]
+    return first or text[:limit]
 
 
 def split(text):
@@ -111,6 +120,8 @@ def split(text):
     q = QUESTION_START.sub('', text[:m.start()], count=1).strip()
     a = text[m.end():].strip()
     if len(q) < 8 or len(a) < 8:
+        return None
+    if not re.search(r'سؤال|يسأل|السائل|سائل|[؟?]', q):
         return None
     # Split only when it is clearly one question and its answer. Anything
     # doubtful stays whole as an article, so no word lands in the wrong box.

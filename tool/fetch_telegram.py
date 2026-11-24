@@ -85,13 +85,25 @@ def main():
             break
         time.sleep(0.15)
     if not posts:
-        # The channel's web preview is closed: use what the bot collected.
+        # The channel's web preview is closed: the channel's own export of
+        # its written posts, then whatever the bot collected after it.
+        try:
+            with open(os.path.join(os.path.dirname(__file__), 'data', 'tg_history.json'), encoding='utf-8') as f:
+                for p in json.load(f):
+                    if p['id'] not in FROM_APP:
+                        posts[p['id']] = p
+            print('posts from the export:', len(posts))
+        except Exception as e:
+            print('no export file:', e)
+        last = max(posts) if posts else 0
         try:
             url = 'https://raw.githubusercontent.com/www774475437-svg/alemad/media/posts.json'
+            n = 0
             for p in json.loads(get(url)):
-                if p['id'] not in FROM_APP and len(p.get('text', '')) >= 20:
+                if p['id'] > last and p['id'] not in FROM_APP and len(p.get('text', '')) >= 20:
                     posts[p['id']] = {'id': p['id'], 'text': p['text'], 'date': p.get('date', '')}
-            print('posts from the bot:', len(posts))
+                    n += 1
+            print('posts from the bot:', n)
         except Exception as e:
             print('no bot posts yet:', e)
     if not posts:
