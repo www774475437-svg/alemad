@@ -734,7 +734,7 @@ class _SiteLessonsViewState extends State<SiteLessonsView> {
           if (fields.isEmpty) {
             return const EmptyState(icon: Icons.school_outlined, text: 'تُحمَّل قائمة الدروس…');
           }
-          final at = _at.clamp(0, fields.length - 1);
+          final at = _at < fields.length ? _at : 0;
           final f = fields[at];
           return Column(children: [
             SizedBox(
@@ -743,7 +743,7 @@ class _SiteLessonsViewState extends State<SiteLessonsView> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
                 itemCount: fields.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (context, i) => const SizedBox(width: 8),
                 itemBuilder: (context, i) => ChoiceChip(
                   label: Text('${fields[i].name} (${fields[i].lists.length})',
                       style: const TextStyle(fontFamily: kUiFont, fontWeight: FontWeight.bold)),

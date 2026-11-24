@@ -333,25 +333,32 @@ class ChapterGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = Repository.instance;
-    final chapters = repo.chapters;
+    // Only the chapters that have something in them, in one row that slides.
+    final chapters = [
+      for (final c in repo.chapters)
+        if (repo.countInChapter(c.id) > 0 || repo.newChapters.contains(c.id)) c
+    ];
     if (chapters.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
+      padding: const EdgeInsets.only(top: 14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Padding(
-          padding: EdgeInsetsDirectional.only(start: 4, bottom: 10),
+          padding: EdgeInsetsDirectional.only(start: 16, bottom: 10),
           child: Text('الأبواب', style: TextStyle(fontFamily: kUiFont, fontSize: 18, fontWeight: FontWeight.bold)),
         ),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+        SizedBox(
+          height: 118,
+          child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           itemCount: chapters.length,
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 130, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1),
+          separatorBuilder: (context, i) => const SizedBox(width: 10),
           itemBuilder: (context, i) {
             final c = chapters[i];
             final fresh = repo.newChapters.contains(c.id);
-            return Material(
+            return SizedBox(
+              width: 118,
+              child: Material(
               color: Pal.card(context),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20), side: BorderSide(color: Pal.line(context))),
@@ -376,8 +383,10 @@ class ChapterGrid extends StatelessWidget {
                   ]),
                 ),
               ),
+              ),
             );
           },
+          ),
         ),
       ]),
     );

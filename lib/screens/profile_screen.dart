@@ -834,6 +834,39 @@ class MyPageCard extends StatelessWidget {
               : quiz.showName && quiz.nick.trim().isNotEmpty
                   ? quiz.nick.trim()
                   : (u.displayName ?? 'رقم ${askerNo(u.uid)}');
+          if (u == null) {
+            // Not signed in yet: a clear invitation, and nothing else.
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
+                  child: Column(children: [
+                    const Icon(Icons.account_circle_rounded, size: 64, color: kGold),
+                    const SizedBox(height: 10),
+                    const Text('سجّل الدخول لتكون لك صفحة',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontFamily: 'Tajawal', fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text('نقاطك وقراءتك ومحفوظاتك ودفترك وأسئلتك للشيخ في مكان واحد،\nوتبقى معك إن بدّلت جهازك.',
+                        textAlign: TextAlign.center, style: TextStyle(height: 1.8)),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                        onPressed: () => Navigator.of(context)
+                            .push(MaterialPageRoute(builder: (_) => const AccountScreen())),
+                        child: const Text('تسجيل الدخول أو إنشاء حساب',
+                            style: TextStyle(fontFamily: 'Tajawal', fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            );
+          }
           return Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: Material(
