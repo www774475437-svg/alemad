@@ -25,6 +25,8 @@ class AccountsScreen extends StatelessWidget {
     'link': 'موقع أو رابط آخر',
   };
 
+  static bool _isSheikh(String name) => name.contains('سلمان') && name.contains('العماد');
+
   static Future<void> _save(BuildContext context, List<Map<String, dynamic>> people, String log) async {
     final err = await Cloud.instance.setConfig('accounts', {'people': people}, log);
     if (context.mounted) {
@@ -39,7 +41,13 @@ class AccountsScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([cloud, repo]),
       builder: (context, _) {
-        final people = cloud.accounts;
+        // The sheikh's own account is shown once, at the top; it is not a
+        // scholar to recommend, so any copy of it in the saved list is dropped.
+        final people = [
+          for (final p in cloud.accounts)
+            if (!_isSheikh('${p['name'] ?? ''}')) p,
+        ];
+        final hasHajuri = people.any((p) => '${p['name'] ?? ''}'.contains('الحجوري'));
         final canEdit = cloud.ready && cloud.isFullAdmin;
         return Scaffold(
           appBar: AppBar(title: const Text('قنوات وحسابات أنصح بها')),
@@ -115,6 +123,9 @@ class AccountsScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              // A scholar the sheikh recommends, shown without a channel for now.
+              if (!hasHajuri)
+                const _PersonCard(name: 'الشيخ العلامة يحيى الحجوري', links: []),
               for (var i = 0; i < people.length; i++)
                 _PersonCard(
                   name: '${people[i]['name'] ?? ''}',

@@ -1,7 +1,8 @@
 {
   "sheikh": [
     {"platform": "telegram", "name": "قناة الشيخ على تليجرام", "url": "https://t.me/salmansalehalemad"},
-    {"platform": "youtube",  "name": "قناة الشيخ على يوتيوب", "url": "https://youtube.com/@salmanalimad"}
+    {"platform": "youtube",  "name": "قناة الشيخ على يوتيوب", "url": "https://youtube.com/@salmanalimad"},
+    {"platform": "link", "name": "موقع الشيخ sh-salman.com", "url": "https://sh-salman.com"}
   ],
   "developer": {
     "name": "أبو عبد الرحمن أحمد الأثري",

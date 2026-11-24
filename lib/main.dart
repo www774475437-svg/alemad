@@ -205,7 +205,7 @@ class AlemadApp extends StatelessWidget {
       listenable: repo,
       builder: (context, _) => MaterialApp(
         navigatorKey: appNavKey,
-        title: 'سلمان العماد',
+        title: 'الشيخ سلمان العماد',
         debugShowCheckedModeBanner: false,
         locale: const Locale('ar'),
         supportedLocales: const [Locale('ar')],

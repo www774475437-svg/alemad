@@ -53,16 +53,16 @@ class SectionHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(14, 20, 8, 8),
+        padding: const EdgeInsets.fromLTRB(14, 24, 8, 10),
         child: Row(children: [
           Container(
-              width: 5,
-              height: 22,
+              width: 6,
+              height: 28,
               decoration: BoxDecoration(color: kGold, borderRadius: BorderRadius.circular(3))),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(text,
-                style: const TextStyle(fontFamily: kUiFont, fontSize: 18.5, fontWeight: FontWeight.bold)),
+                style: const TextStyle(fontFamily: kUiFont, fontSize: 22, fontWeight: FontWeight.bold)),
           ),
           if (onMore != null)
             TextButton(
@@ -70,6 +70,26 @@ class SectionHead extends StatelessWidget {
               child: const Text('المزيد', style: TextStyle(fontFamily: kUiFont, fontWeight: FontWeight.bold)),
             ),
         ]),
+      );
+}
+
+/// The button under a big row: «المزيد» opens the whole section.
+class MoreBar extends StatelessWidget {
+  final VoidCallback onTap;
+  const MoreBar({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+        child: OutlinedButton(
+          onPressed: onTap,
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(44),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            side: const BorderSide(color: kGold, width: 1.2),
+          ),
+          child: const Text('المزيد', style: TextStyle(fontFamily: kUiFont, fontWeight: FontWeight.bold, fontSize: 16)),
+        ),
       );
 }
 
@@ -145,7 +165,9 @@ class SiteSectionsGrid extends StatelessWidget {
 /// «جديد …»: the newest recordings of one list of the site; one press plays.
 class NewAudioRow extends StatefulWidget {
   final String listKey, title, group;
-  const NewAudioRow({super.key, required this.listKey, required this.title, required this.group});
+  /// Big cards with a «المزيد» bar under them (khutab, lectures, replies).
+  final bool big;
+  const NewAudioRow({super.key, required this.listKey, required this.title, required this.group, this.big = false});
 
   @override
   State<NewAudioRow> createState() => _NewAudioRowState();
@@ -188,6 +210,51 @@ class _NewAudioRowState extends State<NewAudioRow> {
   Widget build(BuildContext context) {
     final list = _list;
     if (list == null || _tracks.isEmpty) return const SizedBox.shrink();
+    if (widget.big) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        SectionHead(widget.title),
+        AutoRow(
+          height: 176,
+          step: 284,
+          gap: 12,
+          every: const Duration(seconds: 5),
+          itemCount: _tracks.length,
+          itemBuilder: (context, i) => SizedBox(
+            width: 272,
+            child: Card(
+              margin: EdgeInsets.zero,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () => playTracks(context, list, _tracks, i),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: kGold,
+                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 26),
+                      ),
+                      const Spacer(),
+                      Text(widget.group,
+                          style: TextStyle(fontFamily: kUiFont, fontSize: 12, color: Pal.muted(context))),
+                    ]),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: Text(_tracks[i].title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontFamily: kUiFont, height: 1.6, fontSize: 15.5, fontWeight: FontWeight.bold)),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        ),
+        MoreBar(onTap: () => _push(context, AudioGroupScreen(group: widget.group))),
+      ]);
+    }
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       SectionHead(widget.title, onMore: () => _push(context, AudioGroupScreen(group: widget.group))),
       AutoRow(
@@ -282,43 +349,52 @@ class TextsRow extends StatelessWidget {
   final String title;
   final List<Fatwa> items;
   final Widget more;
-  const TextsRow({super.key, required this.title, required this.items, required this.more});
+  /// Poems: the first verses are shown with their line breaks kept.
+  final bool poem;
+  const TextsRow({super.key, required this.title, required this.items, required this.more, this.poem = false});
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) return const SizedBox.shrink();
     final shown = items.take(10).toList();
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      SectionHead(title, onMore: () => _push(context, more)),
+      SectionHead(title),
       AutoRow(
-        height: 132,
-        step: 252,
-        gap: 10,
+        height: 214,
+        step: 306,
+        gap: 12,
         every: const Duration(seconds: 6),
         itemCount: shown.length,
         itemBuilder: (context, i) {
           final f = shown[i];
-          final first = f.answer.replaceAll('\n', ' ').trim();
+          final body = poem
+              ? f.answer.trim()
+              : f.answer.replaceAll('\n', ' ').trim();
+          final cut = body.length > 260 ? body.substring(0, 260) : body;
           return SizedBox(
-            width: 242,
+            width: 292,
             child: Card(
               margin: EdgeInsets.zero,
               child: InkWell(
                 borderRadius: BorderRadius.circular(18),
                 onTap: () => openFatwa(context, f),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(f.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(height: 1.5, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
+                        style: const TextStyle(fontFamily: kUiFont, height: 1.5, fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
                     Expanded(
-                      child: Text(first.length > 140 ? first.substring(0, 140) : first,
-                          maxLines: 2,
+                      child: Text(cut,
+                          maxLines: poem ? 6 : 5,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(height: 1.5, fontSize: 12.5, color: Pal.muted(context))),
+                          style: TextStyle(
+                              fontFamily: poem ? 'Amiri' : kUiFont,
+                              height: 1.7,
+                              fontSize: poem ? 15 : 13.5,
+                              color: Pal.muted(context))),
                     ),
                   ]),
                 ),
@@ -327,6 +403,7 @@ class TextsRow extends StatelessWidget {
           );
         },
       ),
+      MoreBar(onTap: () => _push(context, more)),
     ]);
   }
 }

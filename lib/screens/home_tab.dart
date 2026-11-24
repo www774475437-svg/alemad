@@ -146,10 +146,12 @@ class _HomeTabState extends State<HomeTab> {
           const SliverToBoxAdapter(child: OccasionCard()),
           // Then «جديد …», row after row, as the site's home page has them.
           const SliverToBoxAdapter(child: NewAudioRow(listKey: 's1', title: 'جديد التلاوات', group: 'التلاوات')),
-          const SliverToBoxAdapter(child: NewAudioRow(listKey: 's6', title: 'جديد الخطب', group: 'الخطب والمحاضرات')),
           const SliverToBoxAdapter(
-              child: NewAudioRow(listKey: 's7', title: 'جديد المحاضرات', group: 'الخطب والمحاضرات')),
-          const SliverToBoxAdapter(child: NewAudioRow(listKey: 's16', title: 'جديد الردود', group: 'الردود')),
+              child: NewAudioRow(listKey: 's6', title: 'جديد الخطب', group: 'الخطب والمحاضرات', big: true)),
+          const SliverToBoxAdapter(
+              child: NewAudioRow(listKey: 's7', title: 'جديد المحاضرات', group: 'الخطب والمحاضرات', big: true)),
+          const SliverToBoxAdapter(
+              child: NewAudioRow(listKey: 's16', title: 'جديد الردود', group: 'الردود', big: true)),
           const SliverToBoxAdapter(child: LessonFieldsRow()),
           SliverToBoxAdapter(
             child: TextsRow(
@@ -161,6 +163,7 @@ class _HomeTabState extends State<HomeTab> {
             child: TextsRow(
                 title: 'القصائد الشعرية',
                 items: siteTexts(const ['القصائد']),
+                poem: true,
                 more: const TextsScreen(title: 'القصائد', sections: ['القصائد'])),
           ),
           SliverToBoxAdapter(
@@ -286,10 +289,11 @@ class _Header extends StatelessWidget {
                 children: [
                   ClipOval(child: AppLogo(size: 40)),
                   const SizedBox(width: 10),
-                  Text('سلمان العماد',
-                      style: TextStyle(
-                          fontFamily: 'Tajawal', color: ink, fontSize: 23, fontWeight: FontWeight.bold)),
-                  const Spacer(),
+                  Expanded(
+                    child: Text('الشيخ سلمان العماد',
+                        style: TextStyle(
+                            fontFamily: 'Amiri', color: ink, fontSize: 26, fontWeight: FontWeight.bold)),
+                  ),
                   IconButton(
                     tooltip: dark ? 'الوضع الفاتح' : 'الوضع الداكن',
                     icon: Icon(dark ? Icons.wb_sunny_outlined : Icons.nightlight_outlined, color: ink),
@@ -303,7 +307,7 @@ class _Header extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              Text('دروس وفوائد وأجوبة الشيخ سلمان بن صالح العماد',
+              Text('التطبيق الرسمي للشيخ سلمان بن صالح العماد',
                   style: TextStyle(color: soft, fontSize: 14.5, height: 1.7)),
               const SizedBox(height: 18),
               Material(

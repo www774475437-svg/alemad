@@ -499,7 +499,7 @@ class _SideNav extends StatelessWidget {
               const ClipOval(child: AppLogo(size: 46)),
               const SizedBox(width: 10),
               Expanded(
-                child: Text('سلمان العماد',
+                child: Text('الشيخ سلمان العماد',
                     style: TextStyle(fontFamily: kUiFont, fontSize: 20, fontWeight: FontWeight.bold, color: accent)),
               ),
             ]),
