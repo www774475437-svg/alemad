@@ -55,14 +55,25 @@ if 'id="loading"' not in h:
           Promise.all(jobs).then(done, done);
         } catch (e) { done(); }
       }
+      var seen = [];
       function stuck(msg) {
         if (opened) return;
         var b = document.getElementById('retry'), w = document.getElementById('why');
         if (b) { b.style.display = 'block'; b.onclick = fresh; }
-        if (w && msg) w.textContent = String(msg).slice(0, 300);
+        if (msg && seen.length < 4) seen.push(String(msg).slice(0, 260));
+        if (w) w.textContent = seen.join('  |  ');
       }
-      window.addEventListener('error', function (e) { stuck(e.message || (e.target && (e.target.src || e.target.href)) || 'error'); }, true);
-      window.addEventListener('unhandledrejection', function (e) { stuck(e.reason && (e.reason.message || e.reason)); });
+      // Say exactly what failed, so a photo of this screen is enough to fix it.
+      window.addEventListener('error', function (e) {
+        var t = e.target, where = '';
+        if (t && t !== window) where = (t.tagName || t.constructor && t.constructor.name || '') + ' ' + (t.src || t.href || t.currentSrc || t.data || '');
+        var st = e.error && e.error.stack ? String(e.error.stack).split('\\n').slice(0, 2).join(' ') : '';
+        stuck([e.message, e.filename ? e.filename.split('/').pop() + ':' + e.lineno : '', where, st].filter(Boolean).join(' · ') || 'error ?');
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e.reason;
+        stuck('P: ' + (r && (r.stack || r.message) || r));
+      });
       setTimeout(function () { stuck(''); }, 20000);
       // Once, by itself: a first try at a clean reload before asking.
       setTimeout(function () {
