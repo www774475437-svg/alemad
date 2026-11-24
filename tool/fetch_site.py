@@ -10,7 +10,7 @@ UA = {'User-Agent': 'Mozilla/5.0 (alemad-app)'}
 AUDIO_GROUPS = [
     ('التلاوات', [1, 2, 3]),
     ('الخطب والمحاضرات', [6, 7, 8, 9]),
-    ('الردود العلمية', [11, 12, 13, 14, 15, 16, 18]),
+    ('الردود', [11, 12, 13, 14, 15, 16, 18]),
 ]
 LESSON_CATS = [1, 2, 3, 4, 11, 12, 14, 15, 16]
 # Written pieces: (list page, kind of item link, type in the app, section name)
@@ -21,7 +21,9 @@ TEXT_LISTS = [
     ('fatawacat/2', 'fatawas', 'fatwa', 'فقه المعاملات'),
     ('soundscat/10', 'sounds', 'article', 'الخطب المفرغة'),
     ('soundscat/17', 'sounds', 'article', 'الردود المكتوبة'),
+    ('poemscats/1', 'poems', 'article', 'القصائد'),
 ]
+DOC_CATS = [7, 6, 5, 4, 3, 2, 1]  # the order of the site's own menu
 
 
 def get(url, tries=3):
@@ -128,8 +130,31 @@ def parse_text_list(kind):
                 continue
             a = re.search(r'href="([^"]*/uploads/[^"]+\.(?:mp3|m4a))"', b, re.I)
             out.append({'id': int(m.group(1)), 't': clean(m.group(2)), 'audio': enc(a.group(1)) if a else ''})
+        if not out:
+            out = [{'id': i, 't': t, 'audio': ''} for i, t in links_of(page, kind)]
         return out
     return f
+
+
+def links_of(page, kind):
+    """Every item of a kind linked from a page, with the longest title it is given."""
+    best = {}
+    for i, t in re.findall(r'href="[^"]*/%s/(\d+)"[^>]*>(.*?)</a>' % kind, page, re.S):
+        t = clean(t)
+        if len(t) > len(best.get(int(i), '')):
+            best[int(i)] = t
+    return [(i, t) for i, t in best.items() if len(t) > 3]
+
+
+def media_of(page, folder):
+    """The files of an item page, by their kind."""
+    out = {'audio': [], 'img': [], 'video': [], 'file': []}
+    for u in dict.fromkeys(re.findall(r'(?:src|href)="([^"]*/uploads/%s[^"]+)"' % folder, page)):
+        ext = u.rsplit('.', 1)[-1].lower()
+        kind = ('audio' if ext in ('mp3', 'm4a', 'ogg', 'wav', 'aac') else 'img' if ext in ('png', 'jpg', 'jpeg', 'webp', 'gif')
+                else 'video' if ext in ('mp4', 'mov', 'webm', 'mkv') else 'file')
+        out[kind].append(enc(u))
+    return out
 
 
 def paged(url, parse, limit=80):
@@ -220,6 +245,12 @@ def main():
         for it in items:
             page = get('%s/%s/%d' % (BASE, kind, it['id']))
             text = body_text(page)
+            if kind == 'poems':
+                # A poem kept as a picture or a file: say where it is.
+                m = media_of(page, '')
+                extra = [u for u in m['img'] + m['file'] if '/poems' in u or '/uploads/' in u and 'logo' not in u]
+                if len(text) < 40 and extra:
+                    text = (text + '\n\n' + '\n'.join(extra[:6])).strip()
             if len(text) < 40:
                 continue
             d = re.search(r'float-start">\s*(\d{4}-\d\d-\d\d)', page)
@@ -229,6 +260,29 @@ def main():
             n += 1
             time.sleep(.2)
         print('texts', section, n)
+
+    # «الترجمة»: the sheikh's biography, as the site writes it.
+    bio = body_text(get(BASE + '/posts/31'))
+    print('bio', len(bio))
+
+    # «الوثائق»: each section of documents with what every document holds.
+    docs = []
+    for cid in DOC_CATS:
+        url = '%s/documents/category/%d' % (BASE, cid)
+        name = ''
+        for a, t in re.findall(r'href="[^"]*/documents/category/(\d+)"[^>]*>(.*?)</a>', get(BASE + '/documents'), re.S):
+            if int(a) == cid and len(clean(t)) > len(name):
+                name = clean(t)
+        found, _ = paged(url, lambda p: [{'id': i, 't': t} for i, t in links_of(p, 'documents')], limit=30)
+        items = []
+        for it in sorted(found, key=lambda x: -x['id']):
+            m = media_of(get('%s/documents/%d' % (BASE, it['id'])), 'documents')
+            if any(m.values()):
+                items.append({'id': it['id'], 't': it['t'], **{k: v for k, v in m.items() if v}})
+            time.sleep(.2)
+        if items:
+            docs.append({'id': cid, 'name': name or 'وثائق %d' % cid, 'items': items})
+        print('documents', cid, name[:40], len(items))
 
     n_audio = sum(len(c['items']) for g in data['audio'] for c in g['cats'])
     n_less = sum(len(c['items']) for l in data['lessons'] for c in l['courses'])
@@ -269,8 +323,12 @@ def main():
                      'courses': [{'id': c['id'], 'key': 'c%d' % c['id'], 'name': c['name'], 'n': len(c['items'])}
                                  for c in l['courses']]} for l in data['lessons']],
         'books': data['books'],
+        'bio': bio,
+        'docs': [{'id': d['id'], 'name': d['name'], 'n': len(d['items'])} for d in docs],
     }
     dump('index.json', index)
+    if docs:
+        dump('docs.json', docs)
     dump('titles.json', titles)
     dump('texts.json', data['texts'])
     old = os.path.join(out, 'site.json')
