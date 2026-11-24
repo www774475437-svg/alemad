@@ -277,6 +277,23 @@ def main():
         items = []
         for it in sorted(found, key=lambda x: -x['id']):
             m = media_of(get('%s/documents/%d' % (BASE, it['id'])), 'documents')
+            # Pictures are copied beside the lists, so the website can show them too.
+            for n, u in enumerate(m['img']):
+                ext = u.rsplit('.', 1)[-1].lower()
+                rel = 'docimg/%d_%d.%s' % (it['id'], n, ext)
+                path = os.path.join(out, rel)
+                if not os.path.exists(path):
+                    try:
+                        with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=90) as r:
+                            blob = r.read()
+                        if 0 < len(blob) < 8 * 1024 * 1024:
+                            os.makedirs(os.path.dirname(path), exist_ok=True)
+                            with open(path, 'wb') as f:
+                                f.write(blob)
+                    except Exception as e:  # noqa
+                        print('picture not copied', it['id'], e)
+                if os.path.exists(path):
+                    m['img'][n] = 'https://raw.githubusercontent.com/www774475437-svg/alemad/site/' + rel
             if any(m.values()):
                 items.append({'id': it['id'], 't': it['t'], **{k: v for k, v in m.items() if v}})
             time.sleep(.2)
