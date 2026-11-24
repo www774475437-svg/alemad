@@ -1,0 +1,17 @@
+HTTP/2 200 
+date: Tue, 24 Nov 2026 00:23:08 GMT
+content-type: text/html; charset=UTF-8
+vary: Accept-Encoding
+x-powered-by: PHP/8.2.36
+cache-control: no-cache, private
+set-cookie: XSRF-TOKEN=eyJpdiI6IjNRMm45MGxjZ3FnWkttRmhBTW5vQkE9PSIsInZhbHVlIjoiMXMzdG81dVA2cmlSTEUydXg2b2JOa25ySEN1VzFOaHNyOUNlRUlBb1BTaWJaNnVBbkZSenFkYnN2SXAvNlJnWklmaENxZitYTzZzbkJNWkZ4Nm1ibGliMGsvZmdISkg1QkFQcE9jeWlaNmV5Rld3b2J2b0FFR1FJVDEvek9ZRzQiLCJtYWMiOiJjODFiMmZiY2ZjNzgxNGY2N2I2NWY2MTBkMjI3MGU0OGE1ZmU2MjA2YjAwMDExYTAwYzAxMGU5M2E2MDljNTRlIiwidGFnIjoiIn0%3D; expires=Tue, 24 Nov 2026 02:23:08 GMT; Max-Age=7200; path=/; secure; samesite=lax
+set-cookie: laravel_session=eyJpdiI6ImkxYTUrVkM2b2tNVDAyMksyS0dOckE9PSIsInZhbHVlIjoiRnlidDR4OEwreEZnTjY3ZXk3eTdURXlsZW1Pc1hCa3FyaWVIUWZOY2pEa2ZuaUdhbzVVcjFHTUhyOXM2R05NTWNaQzJjMThqbFJ1YnZsS2ZpMmNYbURYM04zUW1qU2o4Vm93VHRkSW5MWnd6eFJJK2laMWUrYmhCN0h1aHpON2UiLCJtYWMiOiI5YWYwZTg2YmE3MzdkODg2NmIxYjAzNjM4ZDE5NDdkY2EwNDIzMjU0NzYyMTkwNTc2ZGRiNjg5NTU5ZGY0Njg4IiwidGFnIjoiIn0%3D; expires=Tue, 24 Nov 2026 02:23:08 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+platform: hostinger
+panel: hpanel
+content-security-policy: upgrade-insecure-requests
+server: hcdn
+alt-svc: h3=":443"; ma=86400
+x-hcdn-request-id: 3b1575369b73b1918ecf90daa78f3805-imm-edge8
+x-hcdn-cache-status: DYNAMIC
+x-hcdn-upstream-rt: 0.184
+
