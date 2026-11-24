@@ -88,7 +88,13 @@ jobs:
         run: dart run flutter_launcher_icons
 
       - name: Build APK
-        run: flutter build apk --release --target-platform android-arm,android-arm64 --build-number=${{ github.run_number }} --dart-define=BUILD_NUMBER=${{ github.run_number }}
+        # Maven Central sometimes answers 429 to the runner: wait and try again.
+        run: |
+          for n in 1 2 3 4; do
+            flutter build apk --release --target-platform android-arm,android-arm64 --build-number=${{ github.run_number }} --dart-define=BUILD_NUMBER=${{ github.run_number }} && exit 0
+            echo "build attempt $n failed; waiting"; sleep $((n * 60))
+          done
+          exit 1
 
       - name: Rename APK
         run: cp build/app/outputs/flutter-apk/app-release.apk alemad.apk
@@ -111,7 +117,7 @@ jobs:
   website:
     needs: [data, android]
     # Runs after the APK (or without it on the daily refresh).
-    if: always() && needs.data.result == 'success' && needs.android.result != 'failure'
+    if: always() && needs.data.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
