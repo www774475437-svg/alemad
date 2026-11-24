@@ -1,0 +1,39 @@
+name: Sheikh's official site (recordings, lessons, books)
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    branches: [main]
+    paths: ['tool/fetch_site.py', '.github/workflows/site.yml']
+  workflow_dispatch:
+concurrency:
+  group: site
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    env:
+      REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: code
+          sparse-checkout: tool
+      - name: Branches for the list and the books
+        run: |
+          git clone --depth 1 --branch site "$REMOTE" site || (git init -b site site && git -C site remote add origin "$REMOTE")
+          git clone --depth 1 --branch books "$REMOTE" books || (git init -b books books && git -C books remote add origin "$REMOTE")
+      - name: Read the site
+        run: python3 -I code/tool/fetch_site.py site books
+      - name: Save
+        run: |
+          for d in books site; do
+            cd $d
+            git config user.name "www774475437-svg"
+            git config user.email "338496743+www774475437-svg@users.noreply.github.com"
+            git add -A
+            git diff --cached --quiet || (git commit -qm "تحديث من الموقع الرسمي" && git push -q origin HEAD:$d)
+            cd ..
+          done
