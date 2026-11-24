@@ -1,6 +1,7 @@
 import 'benefit_card.dart';
 import 'sections.dart';
 import 'site_screens.dart';
+import 'site_home.dart';
 import 'ask_screen.dart';
 import 'quiz_screens.dart';
 import '../widgets/announcement.dart';
@@ -130,39 +131,8 @@ class _HomeTabState extends State<HomeTab> {
           const SliverToBoxAdapter(child: LiveBanner()),
           const SliverToBoxAdapter(child: FridayKhutbaCard()),
           const SliverToBoxAdapter(child: ContinueListeningCard()),
-          SliverToBoxAdapter(child: LatestLessonCard(recordings: _recs)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-              child: Row(children: [
-                Expanded(
-                  child: FilledButton.tonalIcon(
-                    style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(54),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
-                    icon: const Icon(Icons.forum_rounded),
-                    label: const Text('اسأل الشيخ', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onPressed: () =>
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AskScreen())),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton.tonalIcon(
-                    style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(54),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
-                    icon: const Icon(Icons.groups_rounded),
-                    label: const Text('المشايخ الثقات', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onPressed: () => Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (_) => const TrustedScholarsScreen())),
-                  ),
-                ),
-              ]),
-            ),
-          ),
-          const SliverToBoxAdapter(child: BenefitCard()),
-          const SliverToBoxAdapter(child: ChapterGrid()),
+          // The sections of the sheikh's site, in its own order.
+          const SliverToBoxAdapter(child: SiteSectionsGrid()),
           if (_updateAt != null)
             SliverToBoxAdapter(
               child: _Banner(
@@ -173,126 +143,33 @@ class _HomeTabState extends State<HomeTab> {
                 url: AppConfig.apkUrl,
               ),
             ),
-          if (kIsWeb)
-            const SliverToBoxAdapter(
-              child: _Banner(
-                icon: Icons.android,
-                title: 'حمّل تطبيق «سلمان العماد»',
-                color: Color(0xFFB3261E),
-                subtitle: 'لأجهزة أندرويد — يعمل دون إنترنت',
-                url: AppConfig.apkUrl,
-              ),
-            ),
-          // The newest answers and recordings, side by side.
-          SliverToBoxAdapter(child: _LatestBoard(recordings: _recs)),
           const SliverToBoxAdapter(child: OccasionCard()),
-          // Back to where the reader stopped.
-          const SliverToBoxAdapter(child: _Resume()),
-          SliverToBoxAdapter(child: _TodayStrip(onSetWird: widget.onOpenMore)),
-          const SliverToBoxAdapter(child: LessonsHomeCard()),
-          if (repo.fatwaOfDay != null)
-            SliverToBoxAdapter(child: _FatwaOfDay(fatwa: repo.fatwaOfDay!)),
-          const SliverToBoxAdapter(child: _DailyVerse()),
-          // The search in the trusted scholars' books, with the AI.
+          // Then «جديد …», row after row, as the site's home page has them.
+          const SliverToBoxAdapter(child: NewAudioRow(listKey: 's1', title: 'جديد التلاوات', group: 'التلاوات')),
+          const SliverToBoxAdapter(child: NewAudioRow(listKey: 's6', title: 'جديد الخطب', group: 'الخطب والمحاضرات')),
+          const SliverToBoxAdapter(
+              child: NewAudioRow(listKey: 's7', title: 'جديد المحاضرات', group: 'الخطب والمحاضرات')),
+          const SliverToBoxAdapter(child: NewAudioRow(listKey: 's16', title: 'جديد الردود', group: 'الردود')),
+          const SliverToBoxAdapter(child: LessonFieldsRow()),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-              child: Material(
-                borderRadius: BorderRadius.circular(16),
-                clipBehavior: Clip.antiAlias,
-                elevation: 2,
-                child: Ink(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: [Color(0xFFA8404C), Color(0xFF5E1B24)],
-                    ),
-                  ),
-                  child: InkWell(
-                    onTap: () => Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (_) => const TrustedFatwaScreen())),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      child: Row(
-                        children: [
-                          Icon(Icons.smart_toy_outlined, color: kGold, size: 30),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('بحث الفتاوى من كتب الثقات',
-                                    style: TextStyle(
-                                        fontFamily: 'Tajawal',
-                                        color: Colors.white,
-                                        fontSize: 16.5,
-                                        fontWeight: FontWeight.bold)),
-                                SizedBox(height: 2),
-                                Text('باستخدام الذكاء الاصطناعي',
-                                    style: TextStyle(
-                                        fontFamily: 'Tajawal',
-                                        color: kGold,
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_left, color: Colors.white),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            child: TextsRow(
+                title: 'المقالات والتنبيهات',
+                items: [...siteTexts(const ['المقالات العامة', 'التنبيهات']), ...channelTexts().take(6)],
+                more: const ArticlesScreen()),
           ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  side: const BorderSide(color: kGold),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                icon: const Icon(Icons.shuffle, color: kGold),
-                label: const Text('جواب عشوائي لم تقرأه بعد'),
-                onPressed: () {
-                  final f = repo.randomUnread();
-                  if (f != null) openFatwa(context, f);
-                },
-              ),
-            ),
+            child: TextsRow(
+                title: 'القصائد الشعرية',
+                items: siteTexts(const ['القصائد']),
+                more: const TextsScreen(title: 'القصائد', sections: ['القصائد'])),
           ),
-          const SliverToBoxAdapter(child: _CloudSections()),
-          const SliverToBoxAdapter(child: _Counts()),
-
-          // ------------------------------------------------ للقراءة
-          const SliverToBoxAdapter(child: _GroupTitle('للقراءة', Icons.menu_book_outlined)),
-          const SliverToBoxAdapter(child: _ReadRow()),
-          const SliverToBoxAdapter(child: _MostRead()),
-          const SliverToBoxAdapter(child: _MostSearched()),
-
-          // ------------------------------------------------ للمشاهدة والمتابعة
-          const SliverToBoxAdapter(child: _GroupTitle('للمشاهدة والمتابعة', Icons.play_circle_outline)),
-          const SliverToBoxAdapter(child: _SiteAudioRow()),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-              child: Card(
-                margin: EdgeInsets.zero,
-                child: ListTile(
-                  leading: const Icon(Icons.headphones, color: kGold, size: 28),
-                  title: const Text('الدروس والتسجيلات الصوتية', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('الخطب والمحاضرات والتلاوات والردود'),
-                  trailing: const Icon(Icons.chevron_left),
-                  onTap: () =>
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SiteAudioTab())),
-                ),
-              ),
-            ),
+            child: TextsRow(
+                title: 'جديد الفتاوى',
+                items: siteTexts(const ['فقه العبادات', 'فقه المعاملات']),
+                more: const TextsScreen(title: 'الفتاوى', sections: ['فقه العبادات', 'فقه المعاملات'])),
           ),
+          const SliverToBoxAdapter(child: NewBooksRow()),
           if (repo.videos.isEmpty)
             SliverToBoxAdapter(
               child: Column(
@@ -327,122 +204,19 @@ class _HomeTabState extends State<HomeTab> {
               child: _VideoStrip(videos: repo.videos.take(8).toList()),
             ),
           ],
-          // «الأسئلة»: today's question and a button to the section, after the videos.
-          const SliverToBoxAdapter(child: _GroupTitle('الأسئلة', Icons.quiz_outlined)),
-          const SliverToBoxAdapter(child: QuizHomeStrip()),
-          if (repo.channel.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: _SectionTitle('أحدث منشورات القناة',
-                  action: 'الكل',
-                  onAction: () => Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (_) => const ChannelScreen()))),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 150,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: repo.channel.length < 8 ? repo.channel.length : 8,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
-                  itemBuilder: (context, i) {
-                    final p = repo.channel[i];
-                    return SizedBox(
-                      width: 250,
-                      child: Card(
-                        margin: EdgeInsets.zero,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(18),
-                          onTap: () => openChannelPost(context, p),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(friendlyDate(p.date), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                                const SizedBox(height: 6),
-                                Expanded(
-                                  child: Text(withShortLinks(p.text),
-                                      maxLines: 4, overflow: TextOverflow.ellipsis, style: const TextStyle(height: 1.7)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-
           const SliverToBoxAdapter(child: HomeAnnouncement(place: 'bottom')),
 
-          // ------------------------------------------------ تصفّح المكتبة
-          const SliverToBoxAdapter(child: _GroupTitle('تصفّح المكتبة', Icons.explore_outlined)),
-          if (!repo.fullyLoaded)
+          if (kIsWeb)
             const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Column(
-                  children: [
-                    LinearProgressIndicator(minHeight: 3),
-                    SizedBox(height: 6),
-                    Text('جارٍ تحميل بقية المكتبة…', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
+              child: _Banner(
+                icon: Icons.android,
+                title: 'حمّل تطبيق «سلمان العماد»',
+                color: Color(0xFFB3261E),
+                subtitle: 'لأجهزة أندرويد — يعمل دون إنترنت',
+                url: AppConfig.apkUrl,
               ),
             ),
-          // Answers, articles, books and scholars, one after another, as far as the reader scrolls.
-          SliverList.builder(
-            itemCount: _feedFor(repo).length,
-            itemBuilder: (context, i) {
-              final item = _feedFor(repo)[i];
-              final Widget tile = item is Fatwa
-                  ? FatwaTile(fatwa: item)
-                  : item is Book
-                      ? _BookRow(book: item)
-                      : item is TrustedScholar
-                          ? _ScholarRow(scholar: item)
-                          : item is Recording
-                              ? _RecordingRow(rec: item)
-                              : const SizedBox.shrink();
-              // Cards between the items, spread out: prayer, Quran, adhkar, zakat, «صفحتي».
-              final Widget? extra = switch (i) {
-                10 => PrayerSkyCard(onTap: () => openPrayer(context)),
-                30 => const _QuranPromo(),
-                40 => _Promo(
-                    icon: Icons.spa_outlined,
-                    title: 'الأذكار',
-                    subtitle: 'حصن المسلم كاملاً، وعدّاد التسبيح',
-                    colors: const [Color(0xFF2E7D32), Color(0xFF1B5E20)],
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdhkarScreen())),
-                  ),
-                55 when Cloud.instance.zakatOn => _Promo(
-                    icon: Icons.calculate_outlined,
-                    title: 'حاسبة الزكاة',
-                    subtitle: 'احسب زكاة مالك وذهبك بسهولة',
-                    colors: const [Color(0xFF8E6B1E), Color(0xFF5E4612)],
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ZakatScreen())),
-                  ),
-                70 => _Promo(
-                    icon: Icons.dashboard_outlined,
-                    title: 'صفحتي',
-                    subtitle: 'نقاطك وأوسمتك وما قرأته هذا الشهر',
-                    colors: const [Color(0xFF4A1620), Color(0xFF8C2F39)],
-                    onTap: () => openDashboard(context),
-                  ),
-                _ => null,
-              };
-              if (extra == null) return tile;
-              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 8), child: extra),
-                tile,
-              ]);
-            },
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          const SliverToBoxAdapter(child: SizedBox(height: 110)),
         ],
         ),
       ),

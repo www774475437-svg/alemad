@@ -56,6 +56,10 @@ class SiteData extends ChangeNotifier {
   List<SiteGroup> audio = [];
   List<SiteGroup> lessons = [];
   List<Book> books = [];
+
+  /// «الترجمة» as the site writes it, and the sections of «الوثائق».
+  String bio = '';
+  List<SiteList> docs = [];
   SiteTrack? khutba; // the newest Friday sermon
 
   List<Book> get levels => books.where((b) => b.level > 0).toList()..sort((a, b) => a.level.compareTo(b.level));
@@ -135,9 +139,35 @@ class SiteData extends ChangeNotifier {
     audio = a;
     lessons = l;
     books = b;
+    bio = '${m['bio'] ?? ''}';
+    docs = [
+      for (final d in (m['docs'] as List? ?? const []))
+        SiteList('d${(d as Map)['id']}', '${d['name'] ?? ''}', (d['n'] as num? ?? 0).toInt())
+    ];
     final k = m['khutba'];
     khutba = k is Map ? SiteTrack.fromJson(k) : null;
     if (b.isNotEmpty) Repository.instance.setBooks(b);
+  }
+
+  // ------------------------------------------------------------ documents
+  Map<String, List<Map>>? _docs;
+
+  /// The documents of one section («d5»), read from the net once.
+  Future<List<Map>> docItems(String key) async {
+    if (_docs == null) {
+      try {
+        final res = await http.get(Uri.parse('${_base}docs.json')).timeout(const Duration(seconds: 30));
+        if (res.statusCode == 200) {
+          _docs = {
+            for (final d in (jsonDecode(utf8.decode(res.bodyBytes)) as List))
+              'd${(d as Map)['id']}': [for (final i in (d['items'] as List? ?? const [])) i as Map]
+          };
+        }
+      } catch (e) {
+        debugPrint('docs: $e');
+      }
+    }
+    return _docs?[key] ?? const [];
   }
 
   // ------------------------------------------------------------ one list

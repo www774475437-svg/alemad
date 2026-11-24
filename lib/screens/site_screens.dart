@@ -236,16 +236,16 @@ class _TrackListScreenState extends State<TrackListScreen> {
 
 /// A list you browse in place: press it and its recordings open under it,
 /// press one and it plays. No page in between.
-class _ListCard extends StatefulWidget {
+class SiteListCard extends StatefulWidget {
   final SiteList list;
   final IconData icon;
-  const _ListCard({super.key, required this.list, required this.icon});
+  const SiteListCard({super.key, required this.list, required this.icon});
 
   @override
-  State<_ListCard> createState() => _ListCardState();
+  State<SiteListCard> createState() => SiteListCardState();
 }
 
-class _ListCardState extends State<_ListCard> {
+class SiteListCardState extends State<SiteListCard> {
   static const _first = 25;
   bool _open = false;
   List<SiteTrack>? _tracks;
@@ -705,7 +705,7 @@ class SiteAudioTab extends StatelessWidget {
               body: TabBarView(children: [
                 for (final g in groups)
                   ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 120), children: [
-                    for (final l in g.lists) _ListCard(list: l, icon: _icon(g.name)),
+                    for (final l in g.lists) SiteListCard(list: l, icon: _icon(g.name)),
                   ]),
               ]),
             ),
@@ -717,14 +717,16 @@ class SiteAudioTab extends StatelessWidget {
 /// The lessons of the site: the fields of knowledge as chips on top, and
 /// under them the books of the chosen field, each opening in place.
 class SiteLessonsView extends StatefulWidget {
-  const SiteLessonsView({super.key});
+  /// The field shown first.
+  final int initial;
+  const SiteLessonsView({super.key, this.initial = 0});
 
   @override
   State<SiteLessonsView> createState() => _SiteLessonsViewState();
 }
 
 class _SiteLessonsViewState extends State<SiteLessonsView> {
-  int _at = 0;
+  late int _at = widget.initial;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -762,7 +764,7 @@ class _SiteLessonsViewState extends State<SiteLessonsView> {
                     child: Text('${f.lists.length} شرحاً · ${f.count} درساً — اضغط الشرح لتظهر دروسه',
                         style: TextStyle(color: Pal.muted(context), fontSize: 12.5)),
                   ),
-                  for (final c in f.lists) _ListCard(key: ValueKey(c.key), list: c, icon: Icons.school_rounded),
+                  for (final c in f.lists) SiteListCard(key: ValueKey(c.key), list: c, icon: Icons.school_rounded),
                 ],
               ),
             ),
