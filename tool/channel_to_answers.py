@@ -132,12 +132,48 @@ def split(text):
     return q, a
 
 
+_LINKS = re.compile(r'https?://\S+|t\.me/\S+')
+_TRANSCRIBED = re.compile(r'^\W*(?:الخ[ُ]?طب|الردود)\s+الم[ُ]?فر')
+# Written about the sheikh by someone else, not by him.
+_BY_OTHERS = re.compile(
+    r'سلمان(?:\s+بن\s+صالح)?(?:\s+حسين)?\s+العماد\W{0,6}(?:حفظه|وفقه|سدده|رعاه)'
+    r'|(?:شيخنا|لشيخنا|للشيخ|للداعي[ةه]|أخونا|للأخ)\s+(?:\S+\s+){0,5}?سلمان\s'
+    r'|الشيخ سلمان العماد|سليمان بن سلمان|ولد الشيخ سلمان|جناب الشيخ سلمان|درك يا سلمان'
+    r'|^\W*(?:مقال|تفريغ|كلم[ةه])\s+ل', re.M)
+_NOTICE = re.compile(
+    r'بشرى سار|^\W*[إا]عـ*لان|ستقام|برنامج الدروس|نبد[أا] من يومنا|ال[إا]نتهاء من تدريس'
+    r'|لمن (?:يتابع|أراد المتابع|يسأل)|تلبي[ةه] لطلب|خطب[ةه] الجمع[ةه] اليوم|مولودا|رابط القنا[ةه]|فتح قنا[ةه]|دعواتكم'
+    r'|جديد [إاأ]صدارات|مقتطف|🎧|على الهواء|هدي[ةه] جميل|YouTube|تقر[أا] في الكتاب|تطبيق باسم|ونواصل', re.M)
+MIN_OWN = 250
+
+
+def is_article(text):
+    """Only the sheikh's own written pieces: no notices, no link lists,
+    nothing others wrote about him."""
+    if len(text) < MIN_OWN or re.match(r'^\W*\d+\s*[-–)]', text):
+        return False
+    if _TRANSCRIBED.search(text[:120]):
+        return True
+    links = len(_LINKS.findall(text))
+    if links >= 4 and len(text) / links < 400:
+        return False
+    if _BY_OTHERS.search(text[:350]) or 'من حالة الشيخ' in text[-220:]:
+        return False
+    if _NOTICE.search(text) and len(text) < 1200:
+        return False
+    return True
+
+
 def convert(posts):
-    answers, rest = [], []
+    answers, rest, seen = [], [], set()
     for p in posts:
         text = clean(p['text'])
-        if not text or LINK_ONLY.match(text):
+        if not text or LINK_ONLY.match(text) or not is_article(text):
             continue
+        key = norm(re.sub(r'\W+', '', text))[:200]
+        if key in seen:
+            continue
+        seen.add(key)
         qa = split(text)
         base = {
             'id': 'tg-%d' % p['id'],
