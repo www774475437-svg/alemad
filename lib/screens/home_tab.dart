@@ -421,7 +421,7 @@ class _HomeTabState extends State<HomeTab> {
                           : item is Recording
                               ? _RecordingRow(rec: item)
                               : const SizedBox.shrink();
-              // Cards between the items, spread out: prayer, Quran, adhkar, zakat, «لوحتي».
+              // Cards between the items, spread out: prayer, Quran, adhkar, zakat, «صفحتي».
               final Widget? extra = switch (i) {
                 10 => PrayerSkyCard(onTap: () => openPrayer(context)),
                 30 => const _QuranPromo(),
@@ -441,7 +441,7 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                 70 => _Promo(
                     icon: Icons.dashboard_outlined,
-                    title: 'لوحتي',
+                    title: 'صفحتي',
                     subtitle: 'نقاطك وأوسمتك وما قرأته هذا الشهر',
                     colors: const [Color(0xFF4A1620), Color(0xFF8C2F39)],
                     onTap: () => openDashboard(context),
