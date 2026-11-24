@@ -44,6 +44,8 @@ class SiteData extends ChangeNotifier {
 
   static const _url = 'https://raw.githubusercontent.com/www774475437-svg/alemad/site/site.json';
 
+  static const _fixed = {'الردود المكتوبة': 'manhaj', 'التنبيهات': 'manhaj', 'فقه المعاملات': 'muamalat'};
+
   List<SiteGroup> audio = [];
   List<SiteGroup> lessons = [];
   List<Book> books = [];
@@ -76,14 +78,17 @@ class SiteData extends ChangeNotifier {
     try {
       final res = await http.get(Uri.parse(_url)).timeout(const Duration(seconds: 25));
       if (res.statusCode != 200) return;
-      _apply(jsonDecode(utf8.decode(res.bodyBytes)) as Map);
+      final m = jsonDecode(utf8.decode(res.bodyBytes)) as Map;
+      _apply(m);
       notifyListeners();
+      // Written pieces newer than this copy join once everything else is loaded.
+      Future.delayed(const Duration(seconds: 12), () => _apply(m, withTexts: true));
     } catch (e) {
       debugPrint('site.json (net): $e');
     }
   }
 
-  void _apply(Map m) {
+  void _apply(Map m, {bool withTexts = false}) {
     final a = [
       for (final g in (m['audio'] as List? ?? const []))
         SiteGroup('${(g as Map)['group'] ?? ''}', [for (final c in (g['cats'] as List? ?? const [])) SiteList.fromJson(c as Map)])
@@ -110,5 +115,22 @@ class SiteData extends ChangeNotifier {
     lessons = l;
     books = b;
     if (b.isNotEmpty) Repository.instance.setBooks(b);
+    // Written pieces that arrived after this copy of the app was made.
+    final texts = [
+      for (final t in (m['texts'] as List? ?? const []))
+        Fatwa(
+          id: 'site-${(t as Map)['id']}',
+          chapter: _fixed['${t['section']}'] ?? 'mutafarriq',
+          type: '${t['type'] ?? 'article'}',
+          title: '${t['title'] ?? ''}',
+          question: t['type'] == 'fatwa' ? '${t['title'] ?? ''}' : '',
+          answer: '${t['text'] ?? ''}',
+          tags: ['${t['section'] ?? ''}'],
+          date: '${t['date'] ?? ''}',
+          source: '${t['source'] ?? ''}',
+          audio: '${t['audio'] ?? ''}',
+        )
+    ];
+    if (withTexts && texts.isNotEmpty) Repository.instance.addLive(texts, const []);
   }
 }

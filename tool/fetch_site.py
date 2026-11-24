@@ -13,6 +13,15 @@ AUDIO_GROUPS = [
     ('الردود العلمية', [11, 12, 13, 14, 15, 16, 18]),
 ]
 LESSON_CATS = [1, 2, 3, 4, 11, 12, 14, 15, 16]
+# Written pieces: (list page, kind of item link, type in the app, section name)
+TEXT_LISTS = [
+    ('postscats/1', 'posts', 'article', 'المقالات العامة'),
+    ('postscats/2', 'posts', 'article', 'التنبيهات'),
+    ('fatawacat/1', 'fatawas', 'fatwa', 'فقه العبادات'),
+    ('fatawacat/2', 'fatawas', 'fatwa', 'فقه المعاملات'),
+    ('soundscat/10', 'sounds', 'article', 'الخطب المفرغة'),
+    ('soundscat/17', 'sounds', 'article', 'الردود المكتوبة'),
+]
 
 
 def get(url, tries=3):
@@ -86,6 +95,41 @@ def parse_author(page):
         'cover': enc(img.group(1)) if img else '',
         'pdf': enc(pdf.group(1)) if pdf else '',
     }
+
+
+def body_text(page):
+    """The written text of an item page, without the leftovers of Word."""
+    i = page.find('<div class="description">')
+    if i < 0:
+        return ''
+    t = page[i + 25:]
+    for stop in ('<!-- START FOOTER', '<div class="download'):
+        j = t.find(stop)
+        if j > 0:
+            t = t[:j]
+    t = re.sub(r'<!--.*?-->', '', t, flags=re.S)
+    t = re.sub(r'<(style|script|xml)[^>]*>.*?</\1>', '', t, flags=re.S | re.I)
+    t = t.replace('\r', '').replace('\n', ' ')
+    t = re.sub(r'<br\s*/?>|</p>|</div>|</h\d>|</li>|</tr>', '\n', t, flags=re.I)
+    t = html.unescape(re.sub(r'<[^>]+>', '', t)).replace('\xa0', ' ')
+    out = []
+    for line in (re.sub(r'[ \t]+', ' ', x).strip() for x in t.split('\n')):
+        if line or (out and out[-1]):
+            out.append(line)
+    return '\n\n'.join(x for x in out if x).strip()
+
+
+def parse_text_list(kind):
+    def f(page):
+        out = []
+        for b in blocks(page):
+            m = re.search(r'href="[^"]*/%s/(\d+)"[^>]*>(.*?)</a>' % kind, b, re.S)
+            if not m:
+                continue
+            a = re.search(r'href="([^"]*/uploads/[^"]+\.(?:mp3|m4a))"', b, re.I)
+            out.append({'id': int(m.group(1)), 't': clean(m.group(2)), 'audio': enc(a.group(1)) if a else ''})
+        return out
+    return f
 
 
 def paged(url, parse, limit=80):
@@ -168,6 +212,23 @@ def main():
         data['books'].append(b)
         time.sleep(.2)
     print('books', len(data['books']))
+
+    data['texts'] = []
+    for path, kind, typ, section in TEXT_LISTS:
+        items, _ = paged('%s/%s' % (BASE, path), parse_text_list(kind))
+        n = 0
+        for it in items:
+            page = get('%s/%s/%d' % (BASE, kind, it['id']))
+            text = body_text(page)
+            if len(text) < 40:
+                continue
+            d = re.search(r'float-start">\s*(\d{4}-\d\d-\d\d)', page)
+            data['texts'].append({'id': '%s-%d' % (kind, it['id']), 'type': typ, 'section': section, 'title': it['t'],
+                                  'text': text, 'date': d.group(1) if d else '', 'audio': it['audio'],
+                                  'source': '%s/%s/%d' % (BASE, kind, it['id'])})
+            n += 1
+            time.sleep(.2)
+        print('texts', section, n)
 
     n_audio = sum(len(c['items']) for g in data['audio'] for c in g['cats'])
     n_less = sum(len(c['items']) for l in data['lessons'] for c in l['courses'])

@@ -19,6 +19,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Posts from the sheikh's Telegram channel
         run: python3 tool/fetch_telegram.py
+      - name: Written pieces from the sheikh's site
+        run: python3 tool/site_texts.py || true
       - uses: actions/upload-artifact@v4
         with:
           name: channel-data
