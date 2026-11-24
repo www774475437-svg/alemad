@@ -5,6 +5,7 @@ import '../data/repository.dart';
 import '../services/cloud.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/auto_row.dart';
 import 'audio_library.dart';
 import 'books_tab.dart';
 import 'chapter_screen.dart';
@@ -348,11 +349,12 @@ class ChapterGrid extends StatelessWidget {
         ),
         SizedBox(
           height: 118,
-          child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: AutoRow(
+          height: 118,
+          step: 256,
+          gap: 10,
+          every: const Duration(milliseconds: 2600),
           itemCount: chapters.length,
-          separatorBuilder: (context, i) => const SizedBox(width: 10),
           itemBuilder: (context, i) {
             final c = chapters[i];
             final fresh = repo.newChapters.contains(c.id);

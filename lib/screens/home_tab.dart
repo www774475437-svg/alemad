@@ -5,6 +5,7 @@ import 'ask_screen.dart';
 import 'quiz_screens.dart';
 import '../widgets/announcement.dart';
 import '../widgets/sky_card.dart';
+import '../widgets/auto_row.dart';
 import 'prayer_screen.dart';
 import 'tools_screens.dart';
 import 'profile_screen.dart';
@@ -1122,7 +1123,7 @@ class _VideoStrip extends StatefulWidget {
 
 class _VideoStripState extends State<_VideoStrip> {
   @override
-  Widget build(BuildContext context) => _AutoRow(
+  Widget build(BuildContext context) => AutoRow(
         height: 215,
         step: 250,
         gap: 10,
@@ -1133,63 +1134,6 @@ class _VideoStripState extends State<_VideoStrip> {
 }
 
 /// A row that moves right and left by itself every few seconds, and by the finger.
-class _AutoRow extends StatefulWidget {
-  final double height;
-  final double step;
-  final double gap;
-  final int itemCount;
-  final IndexedWidgetBuilder itemBuilder;
-  const _AutoRow(
-      {required this.height,
-      required this.step,
-      required this.gap,
-      required this.itemCount,
-      required this.itemBuilder});
-
-  @override
-  State<_AutoRow> createState() => _AutoRowState();
-}
-
-class _AutoRowState extends State<_AutoRow> {
-  final _scroll = ScrollController();
-  Timer? _timer;
-  bool _forward = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted || !_scroll.hasClients) return;
-      final p = _scroll.position;
-      if (p.maxScrollExtent <= 0 || p.isScrollingNotifier.value) return;
-      if (p.pixels >= p.maxScrollExtent - 4) _forward = false;
-      if (p.pixels <= 4) _forward = true;
-      final next = (p.pixels + (_forward ? widget.step : -widget.step)).clamp(0.0, p.maxScrollExtent);
-      _scroll.animateTo(next, duration: const Duration(milliseconds: 700), curve: Curves.easeInOut);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _scroll.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        height: widget.height,
-        child: ListView.separated(
-          controller: _scroll,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          itemCount: widget.itemCount,
-          separatorBuilder: (_, __) => SizedBox(width: widget.gap),
-          itemBuilder: widget.itemBuilder,
-        ),
-      );
-}
-
 class _SectionTitle extends StatelessWidget {
   final String text;
   final String? action;
@@ -1444,7 +1388,7 @@ class _LatestBoard extends StatelessWidget {
           ),
           ),
           const SizedBox(height: 10),
-          _AutoRow(
+          AutoRow(
             height: 128,
             step: 232,
             gap: 10,
@@ -1678,7 +1622,7 @@ class _ReadRow extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       const _SectionTitle('أحدث المقالات'),
-      _AutoRow(
+      AutoRow(
         height: 150,
         step: 242,
         gap: 10,
@@ -1773,7 +1717,7 @@ class _SiteAudioRowState extends State<_SiteAudioRow> {
       _SectionTitle('التسجيلات الصوتية',
           action: 'الكل',
           onAction: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SiteAudioTab()))),
-      _AutoRow(
+      AutoRow(
         height: 138,
         step: 222,
         gap: 10,
