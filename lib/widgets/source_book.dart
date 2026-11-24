@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 import '../data/models.dart';
 import '../data/repository.dart';
@@ -17,10 +18,70 @@ void openSourceBook(BuildContext context, Book b) => openBook(context, b);
 /// because a browser may not download the file from Drive directly.
 Future<void> openBook(BuildContext context, Book b, {int? startPage}) async {
   if (kIsWeb) {
-    openUrl(context, b.previewUrl);
+    // A book of the sheikh's site is read here, inside the website.
+    if (b.url.isNotEmpty) {
+      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => WebBookScreen(book: b)));
+    } else {
+      openUrl(context, b.previewUrl);
+    }
     return;
   }
   await Navigator.of(context).push(MaterialPageRoute(builder: (_) => BookReaderScreen(book: b, startPage: startPage)));
+}
+
+/// The book's pages on the website, without leaving it.
+class WebBookScreen extends StatefulWidget {
+  final Book book;
+  const WebBookScreen({super.key, required this.book});
+
+  @override
+  State<WebBookScreen> createState() => _WebBookScreenState();
+}
+
+class _WebBookScreenState extends State<WebBookScreen> {
+  int _page = 0, _pages = 0;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: Text(widget.book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          actions: [
+            if (_pages > 0)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 14),
+                  child: Text('$_page / $_pages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+          ],
+        ),
+        body: PdfViewer.uri(
+          Uri.parse(widget.book.url),
+          params: PdfViewerParams(
+            loadingBannerBuilder: (context, bytesDownloaded, totalBytes) => Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                CircularProgressIndicator(
+                    value: totalBytes != null && totalBytes > 0 ? bytesDownloaded / totalBytes : null, color: kGold),
+                const SizedBox(height: 14),
+                const Text('جارٍ فتح الكتاب…'),
+              ]),
+            ),
+            errorBannerBuilder: (context, error, stackTrace, documentRef) => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('تعذّر فتح الكتاب الآن.\nتأكد من اتصالك بالإنترنت ثم أعد المحاولة.',
+                    textAlign: TextAlign.center, style: TextStyle(height: 1.8)),
+              ),
+            ),
+            onViewerReady: (document, controller) {
+              if (mounted) setState(() => _pages = document.pages.length);
+            },
+            onPageChanged: (page) {
+              if (page != null && mounted) setState(() => _page = page);
+            },
+          ),
+        ),
+      );
 }
 
 /// «تصفّح الكتاب الذي أُخذ منه السؤال»: big and gold after a wrong answer,

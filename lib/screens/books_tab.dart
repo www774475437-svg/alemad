@@ -2,6 +2,7 @@ import 'dart:io' show File;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../widgets/source_book.dart' show openBook;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/models.dart';
@@ -35,7 +36,7 @@ class _BooksTabState extends State<BooksTab> {
 
   void _open(Book b) {
     if (kIsWeb) {
-      openUrl(context, b.previewUrl);
+      openBook(context, b);
       return;
     }
     Navigator.of(context)

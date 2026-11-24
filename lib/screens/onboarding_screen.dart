@@ -1,6 +1,7 @@
 import '../widgets/common.dart';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../data/repository.dart';
@@ -23,8 +24,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   static const _pages = [
     (
       Icons.menu_book_rounded,
-      'مرحباً بك في «سلمان العماد»',
-      'تطبيق يجمع أجوبة ومقالات وكتب ورسائل الشيخ سلمان بن صالح العماد حفظه الله.',
+      kIsWeb ? 'أهلاً بك في موقع\nالشيخ سلمان العماد' : 'أهلاً بك في تطبيق\nالشيخ سلمان العماد',
+      kIsWeb
+          ? 'موقع يجمع دروس وخطب وكتب ومقالات الشيخ سلمان بن صالح العماد حفظه الله.'
+          : 'تطبيق يجمع دروس وخطب وكتب ومقالات الشيخ سلمان بن صالح العماد حفظه الله.',
     ),
     (
       Icons.search_rounded,
