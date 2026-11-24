@@ -234,27 +234,95 @@ class _TrackListScreenState extends State<TrackListScreen> {
   }
 }
 
-class _ListCard extends StatelessWidget {
+/// A list you browse in place: press it and its recordings open under it,
+/// press one and it plays. No page in between.
+class _ListCard extends StatefulWidget {
   final SiteList list;
   final IconData icon;
-  const _ListCard({required this.list, required this.icon});
+  const _ListCard({super.key, required this.list, required this.icon});
 
   @override
-  Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.only(bottom: 10),
-        child: ListTile(
+  State<_ListCard> createState() => _ListCardState();
+}
+
+class _ListCardState extends State<_ListCard> {
+  static const _first = 25;
+  bool _open = false;
+  List<SiteTrack>? _tracks;
+
+  void _toggle() {
+    setState(() => _open = !_open);
+    if (_open && _tracks == null) {
+      SiteData.instance.tracks(widget.list.key).then((t) {
+        if (mounted) setState(() => _tracks = t);
+      });
+    }
+  }
+
+  void _whole() =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => TrackListScreen(list: widget.list)));
+
+  @override
+  Widget build(BuildContext context) {
+    final list = widget.list, t = _tracks;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: [
+        ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           leading: CircleAvatar(
-              radius: 24, backgroundColor: kGold.withValues(alpha: .18), child: Icon(icon, color: kGoldChip)),
+              radius: 24, backgroundColor: kGold.withValues(alpha: .18), child: Icon(widget.icon, color: kGoldChip)),
           title: Text(list.name,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontFamily: kUiFont, fontWeight: FontWeight.bold, fontSize: 15.5, height: 1.5)),
-          subtitle: Text('${list.count} تسجيلاً'),
-          trailing: const Icon(Icons.chevron_left),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TrackListScreen(list: list))),
+          subtitle: Text(widget.icon == Icons.school_rounded ? '${list.count} درساً' : '${list.count} تسجيلاً'),
+          trailing: Icon(_open ? Icons.expand_less : Icons.expand_more),
+          onTap: _toggle,
         ),
-      );
+        if (_open && t == null)
+          const Padding(padding: EdgeInsets.all(18), child: Center(child: CircularProgressIndicator())),
+        if (_open && t != null && t.isEmpty)
+          const Padding(padding: EdgeInsets.all(16), child: Text('تعذّر التحميل، تأكد من الإنترنت ثم أعد المحاولة.')),
+        if (_open && t != null && t.isNotEmpty) ...[
+          const Divider(height: 1),
+          for (var i = 0; i < t.length && i < _first; i++)
+            ListTile(
+              dense: true,
+              leading: CircleAvatar(
+                  radius: 14,
+                  backgroundColor: kGold.withValues(alpha: .15),
+                  child: Text('${i + 1}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold))),
+              title: Text(t[i].title,
+                  maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14.5, height: 1.5)),
+              trailing: const Icon(Icons.play_circle_outline_rounded),
+              onTap: () => playTracks(context, list, t, i),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: Row(children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => playTracks(context, list, t, 0),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('تشغيل الكل'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _whole,
+                  icon: const Icon(Icons.list_rounded),
+                  label: Text(t.length > _first ? 'الكل (${t.length})' : 'بحث وتنزيل'),
+                ),
+              ),
+            ]),
+          ),
+        ],
+      ]),
+    );
+  }
 }
 
 /// One search in everything: recordings and lessons, books, and the written
@@ -646,9 +714,17 @@ class SiteAudioTab extends StatelessWidget {
       );
 }
 
-/// The lesson series of the site, each field of knowledge with its series.
-class SiteLessonsView extends StatelessWidget {
+/// The lessons of the site: the fields of knowledge as chips on top, and
+/// under them the books of the chosen field, each opening in place.
+class SiteLessonsView extends StatefulWidget {
   const SiteLessonsView({super.key});
+
+  @override
+  State<SiteLessonsView> createState() => _SiteLessonsViewState();
+}
+
+class _SiteLessonsViewState extends State<SiteLessonsView> {
+  int _at = 0;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -658,33 +734,38 @@ class SiteLessonsView extends StatelessWidget {
           if (fields.isEmpty) {
             return const EmptyState(icon: Icons.school_outlined, text: 'تُحمَّل قائمة الدروس…');
           }
-          return ListView(padding: const EdgeInsets.fromLTRB(12, 12, 12, 120), children: [
-            for (final f in fields)
-              Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                clipBehavior: Clip.antiAlias,
-                child: ExpansionTile(
-                  shape: const Border(),
-                  leading: CircleAvatar(
-                      backgroundColor: kGold.withValues(alpha: .18),
-                      child: const Icon(Icons.school_rounded, color: kGoldChip)),
-                  title: Text(f.name,
-                      style: const TextStyle(fontFamily: kUiFont, fontWeight: FontWeight.bold, fontSize: 16.5)),
-                  subtitle: Text('${f.lists.length} سلسلة · ${f.count} درساً'),
-                  children: [
-                    for (final c in f.lists)
-                      ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.playlist_play_rounded),
-                        title: Text(c.name,
-                            maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, height: 1.5)),
-                        trailing: Text('${c.count}', style: TextStyle(color: Pal.muted(context))),
-                        onTap: () =>
-                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => TrackListScreen(list: c))),
-                      ),
-                  ],
+          final at = _at.clamp(0, fields.length - 1);
+          final f = fields[at];
+          return Column(children: [
+            SizedBox(
+              height: 56,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                itemCount: fields.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) => ChoiceChip(
+                  label: Text('${fields[i].name} (${fields[i].lists.length})',
+                      style: const TextStyle(fontFamily: kUiFont, fontWeight: FontWeight.bold)),
+                  selected: i == at,
+                  onSelected: (_) => setState(() => _at = i),
                 ),
               ),
+            ),
+            Expanded(
+              child: ListView(
+                key: ValueKey(f.name),
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 120),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
+                    child: Text('${f.lists.length} شرحاً · ${f.count} درساً — اضغط الشرح لتظهر دروسه',
+                        style: TextStyle(color: Pal.muted(context), fontSize: 12.5)),
+                  ),
+                  for (final c in f.lists) _ListCard(key: ValueKey(c.key), list: c, icon: Icons.school_rounded),
+                ],
+              ),
+            ),
           ]);
         },
       );

@@ -29,7 +29,7 @@ class LessonsTab extends StatelessWidget {
             title: const Text('الدروس'),
             bottom: const TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [
               Tab(text: 'الدروس العلمية'),
-              Tab(text: 'السلاسل'),
+              Tab(text: 'مسارات القراءة'),
               Tab(text: 'المرئيات'),
               Tab(text: 'خطب الجمعة'),
             ]),
@@ -51,7 +51,7 @@ class _SeriesList extends StatelessWidget {
         final list = cloud.series;
         if (list.isEmpty) {
           return const EmptyState(
-              icon: Icons.school_outlined, text: 'لم تُضف سلاسل بعد.\nتظهر هنا سلاسل الشيخ العلمية مرتّبة، مع ما أنجزته من كل سلسلة.');
+              icon: Icons.school_outlined, text: 'لم تُضف مسارات بعد.\nتظهر هنا مسارات لقراءة مقالات الشيخ مرتّبة، مع ما أنجزته من كل مسار.');
         }
         final read = repo.everRead;
         return ListView.builder(

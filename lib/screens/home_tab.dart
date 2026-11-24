@@ -21,6 +21,7 @@ import '../config.dart';
 import '../services/update_check.dart';
 import '../services/fresh_posts.dart';
 import '../services/live_feed.dart';
+import '../services/site_data.dart';
 
 import '../data/hijri.dart';
 import '../data/models.dart';
@@ -268,28 +269,13 @@ class _HomeTabState extends State<HomeTab> {
 
           // ------------------------------------------------ للقراءة
           const SliverToBoxAdapter(child: _GroupTitle('للقراءة', Icons.menu_book_outlined)),
+          const SliverToBoxAdapter(child: _ReadRow()),
           const SliverToBoxAdapter(child: _MostRead()),
           const SliverToBoxAdapter(child: _MostSearched()),
 
           // ------------------------------------------------ للمشاهدة والمتابعة
           const SliverToBoxAdapter(child: _GroupTitle('للمشاهدة والمتابعة', Icons.play_circle_outline)),
-          if (_recs.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: _SectionTitle('التسجيلات الصوتية',
-                  action: 'الكل',
-                  onAction: () => Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (_) => const RecordingsScreen()))),
-            ),
-            SliverToBoxAdapter(
-              child: _AutoRow(
-                height: 138,
-                step: 222,
-                gap: 10,
-                itemCount: math.min(20, _recs.length),
-                itemBuilder: (context, i) => _RecordingCard(rec: _recs[i]),
-              ),
-            ),
-          ],
+          const SliverToBoxAdapter(child: _SiteAudioRow()),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
@@ -298,10 +284,10 @@ class _HomeTabState extends State<HomeTab> {
                 child: ListTile(
                   leading: const Icon(Icons.headphones, color: kGold, size: 28),
                   title: const Text('الدروس والتسجيلات الصوتية', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('سلاسل الدروس وتسجيلات الشيخ'),
+                  subtitle: const Text('الخطب والمحاضرات والتلاوات والردود'),
                   trailing: const Icon(Icons.chevron_left),
-                  onTap: () => Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (_) => const AudioLibraryScreen())),
+                  onTap: () =>
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SiteAudioTab())),
                 ),
               ),
             ),
@@ -1488,7 +1474,7 @@ class _LatestBoard extends StatelessWidget {
                           Row(children: [
                             Icon(isRec ? Icons.headphones : Icons.article_outlined, color: kGold, size: 17),
                             const SizedBox(width: 5),
-                            Text(isRec ? 'تسجيل صوتي' : 'جواب',
+                            Text(isRec ? 'تسجيل صوتي' : (ans!.type == 'fatwa' ? 'جواب' : 'مقال'),
                                 style: const TextStyle(color: kGold, fontSize: 12, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
@@ -1678,4 +1664,157 @@ class _QuranPromo extends StatelessWidget {
           );
         },
       );
+}
+
+
+/// «للقراءة»: the newest written pieces of the sheikh in one moving row.
+class _ReadRow extends StatelessWidget {
+  const _ReadRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = Repository.instance;
+    final items = repo.latest().take(14).toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const _SectionTitle('أحدث المقالات'),
+      _AutoRow(
+        height: 150,
+        step: 242,
+        gap: 10,
+        itemCount: items.length,
+        itemBuilder: (context, i) {
+          final f = items[i];
+          return SizedBox(
+            width: 232,
+            child: Card(
+              margin: EdgeInsets.zero,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () => openFatwa(context, f),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      const Icon(Icons.article_outlined, color: kGoldChip, size: 17),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(repo.chapterName(f.chapter),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: kGoldChip, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ]),
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: Text(f.title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(height: 1.55, fontWeight: FontWeight.w600)),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    ]);
+  }
+}
+
+/// «التسجيلات الصوتية»: the newest sermons and talks from the sheikh's site,
+/// each playing with one press.
+class _SiteAudioRow extends StatefulWidget {
+  const _SiteAudioRow();
+
+  @override
+  State<_SiteAudioRow> createState() => _SiteAudioRowState();
+}
+
+class _SiteAudioRowState extends State<_SiteAudioRow> {
+  SiteList? _list;
+  List<SiteTrack> _tracks = const [];
+  bool _asked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SiteData.instance.addListener(_load);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    SiteData.instance.removeListener(_load);
+    super.dispose();
+  }
+
+  void _load() {
+    if (_asked) return;
+    final list = SiteData.instance.listOf('s6');
+    if (list == null) return;
+    _asked = true;
+    SiteData.instance.tracks(list.key).then((t) {
+      if (!mounted || t.isEmpty) return;
+      final newest = [...t]..sort((a, b) => b.id.compareTo(a.id));
+      setState(() {
+        _list = list;
+        _tracks = newest.take(14).toList();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final list = _list;
+    if (list == null || _tracks.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _SectionTitle('التسجيلات الصوتية',
+          action: 'الكل',
+          onAction: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SiteAudioTab()))),
+      _AutoRow(
+        height: 138,
+        step: 222,
+        gap: 10,
+        itemCount: _tracks.length,
+        itemBuilder: (context, i) => SizedBox(
+          width: 212,
+          child: Card(
+            margin: EdgeInsets.zero,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => playTracks(context, list, _tracks, i),
+              child: Padding(
+                padding: const EdgeInsets.all(11),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    CircleAvatar(
+                      radius: 15,
+                      backgroundColor: kGold.withValues(alpha: 0.2),
+                      child: const Icon(Icons.play_arrow, color: kGoldChip, size: 18),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(list.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: kGoldChip, fontSize: 12)),
+                    ),
+                  ]),
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: Text(_tracks[i].title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(height: 1.5, fontWeight: FontWeight.w600)),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
 }
