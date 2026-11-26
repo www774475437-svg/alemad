@@ -18,6 +18,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
 import '../services/update_check.dart';
@@ -342,6 +343,20 @@ class _Header extends StatelessWidget {
                       ],
                     ),
                   ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => launchUrl(Uri.parse('https://sh-salman.com'), mode: LaunchMode.externalApplication),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.open_in_new, size: 16, color: soft),
+                    const SizedBox(width: 6),
+                    Text('موقع الشيخ: sh-salman.com',
+                        style: TextStyle(fontFamily: kUiFont, color: soft, fontSize: 14, fontWeight: FontWeight.bold)),
+                  ]),
                 ),
               ),
             ],
