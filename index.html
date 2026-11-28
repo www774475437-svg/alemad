@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/alemad/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="أجوبة ومقالات وكتب ورسائل الشيخ سلمان بن صالح العماد حفظه الله، مرتبة على أبواب العقيدة والفقه والآداب، مع البحث بالموضوع.">
+
+  <!--
+    Uncomment the tag below to lay the app out underneath the parts of the
+    screen that the device obstructs, such as a display cutout, the rounded
+    corners of the screen, or a home indicator.
+
+    Without it, the browser keeps the app clear of them, and `SafeArea` and
+    `MediaQuery.paddingOf` report no padding. With it, the app covers the whole
+    screen, and it is up to the app to keep its own content out of the way,
+    which is what `SafeArea` is for.
+  -->
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"> -->
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="سلمان العماد">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>سلمان العماد — أجوبة الشيخ سلمان بن صالح العماد</title>
+  <link rel="manifest" href="manifest.json">
+  <meta property="og:title" content="سلمان العماد — أجوبة الشيخ سلمان بن صالح العماد">
+  <meta property="og:description" content="أجوبة ومقالات وكتب ورسائل الشيخ سلمان بن صالح العماد حفظه الله، مرتبة على أبواب العقيدة والفقه والآداب، مع البحث بالموضوع.">
+  <meta property="og:image" content="https://www774475437-svg.github.io/alemad/icons/Icon-512.png">
+  <meta property="og:url" content="https://www774475437-svg.github.io/alemad/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+</head>
+<body>
+  <style>
+    #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; background: #5E1B24; z-index: 9; transition: opacity .4s; }
+    #loading img { width: 132px; height: 132px; border-radius: 50%; animation: pulse 1.6s ease-in-out infinite; }
+    #loading p { color: #fff; font: 16px sans-serif; margin-top: 22px; }
+    @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: .8; } }
+  </style>
+  <div id="loading"><img src="icons/Icon-192.png" alt=""><p>جارٍ فتح «سلمان العماد»…</p>
+    <button id="retry" style="display:none;margin-top:18px;padding:12px 26px;border:0;border-radius:24px;background:#C9A54C;color:#000;font:bold 16px sans-serif">إعادة التحميل</button>
+    <p id="why" style="font-size:12px;opacity:.75;max-width:86%;text-align:center;direction:ltr"></p></div>
+  <script>
+    (function () {
+      var opened = false;
+      window.addEventListener('flutter-first-frame', function () {
+        opened = true;
+        var l = document.getElementById('loading');
+        if (l) { l.style.opacity = 0; setTimeout(function () { l.remove(); }, 450); }
+      });
+      // If the page stays on this screen (an old copy kept by the browser, or
+      // an error), offer a clean reload and show what went wrong.
+      function fresh() {
+        var done = function () { location.replace(location.pathname + '?r=' + Date.now() + location.hash); };
+        try {
+          var jobs = [];
+          if (window.caches) jobs.push(caches.keys().then(function (k) { return Promise.all(k.map(function (n) { return caches.delete(n); })); }));
+          if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (r) { return Promise.all(r.map(function (x) { return x.unregister(); })); }));
+          Promise.all(jobs).then(done, done);
+        } catch (e) { done(); }
+      }
+      var seen = [];
+      function stuck(msg) {
+        if (opened) return;
+        var b = document.getElementById('retry'), w = document.getElementById('why');
+        if (b) { b.style.display = 'block'; b.onclick = fresh; }
+        if (msg && seen.length < 4) seen.push(String(msg).slice(0, 260));
+        if (w) w.textContent = seen.join('  |  ');
+      }
+      // Say exactly what failed, so a photo of this screen is enough to fix it.
+      window.addEventListener('error', function (e) {
+        var t = e.target, where = '';
+        if (t && t !== window) where = (t.tagName || t.constructor && t.constructor.name || '') + ' ' + (t.src || t.href || t.currentSrc || t.data || '');
+        var st = e.error && e.error.stack ? String(e.error.stack).split('\n').slice(0, 2).join(' ') : '';
+        stuck([e.message, e.filename ? e.filename.split('/').pop() + ':' + e.lineno : '', where, st].filter(Boolean).join(' · ') || 'error ?');
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e.reason;
+        stuck('P: ' + (r && (r.stack || r.message) || r));
+      });
+      setTimeout(function () { stuck(''); }, 20000);
+      // Once, by itself: a first try at a clean reload before asking.
+      setTimeout(function () {
+        if (opened || /[?&]r=/.test(location.search)) return;
+        fresh();
+      }, 45000);
+    })();
+  </script>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
